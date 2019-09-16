@@ -1,0 +1,149 @@
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 1
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"dma.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text.MX_DMA_Init,"ax",%progbits
+  16              		.align	1
+  17              		.global	MX_DMA_Init
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	MX_DMA_Init:
+  24              	.LFB66:
+  25              		.file 1 "Src/dma.c"
+   1:Src/dma.c     **** /**
+   2:Src/dma.c     ****   ******************************************************************************
+   3:Src/dma.c     ****   * File Name          : dma.c
+   4:Src/dma.c     ****   * Description        : This file provides code for the configuration
+   5:Src/dma.c     ****   *                      of all the requested memory to memory DMA transfers.
+   6:Src/dma.c     ****   ******************************************************************************
+   7:Src/dma.c     ****   * @attention
+   8:Src/dma.c     ****   *
+   9:Src/dma.c     ****   * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  10:Src/dma.c     ****   * All rights reserved.</center></h2>
+  11:Src/dma.c     ****   *
+  12:Src/dma.c     ****   * This software component is licensed by ST under BSD 3-Clause license,
+  13:Src/dma.c     ****   * the "License"; You may not use this file except in compliance with the
+  14:Src/dma.c     ****   * License. You may obtain a copy of the License at:
+  15:Src/dma.c     ****   *                        opensource.org/licenses/BSD-3-Clause
+  16:Src/dma.c     ****   *
+  17:Src/dma.c     ****   ******************************************************************************
+  18:Src/dma.c     ****   */
+  19:Src/dma.c     **** /* Includes ------------------------------------------------------------------*/
+  20:Src/dma.c     **** #include "dma.h"
+  21:Src/dma.c     **** 
+  22:Src/dma.c     **** /* USER CODE BEGIN 0 */
+  23:Src/dma.c     **** 
+  24:Src/dma.c     **** /* USER CODE END 0 */
+  25:Src/dma.c     **** 
+  26:Src/dma.c     **** /*----------------------------------------------------------------------------*/
+  27:Src/dma.c     **** /* Configure DMA                                                              */
+  28:Src/dma.c     **** /*----------------------------------------------------------------------------*/
+  29:Src/dma.c     **** 
+  30:Src/dma.c     **** /* USER CODE BEGIN 1 */
+  31:Src/dma.c     **** 
+  32:Src/dma.c     **** /* USER CODE END 1 */
+  33:Src/dma.c     **** 
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s 			page 2
+
+
+  34:Src/dma.c     **** /** 
+  35:Src/dma.c     ****   * Enable DMA controller clock
+  36:Src/dma.c     ****   */
+  37:Src/dma.c     **** void MX_DMA_Init(void) 
+  38:Src/dma.c     **** {
+  26              		.loc 1 38 0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 8
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30 0000 00B5     		push	{lr}
+  31              	.LCFI0:
+  32              		.cfi_def_cfa_offset 4
+  33              		.cfi_offset 14, -4
+  34 0002 83B0     		sub	sp, sp, #12
+  35              	.LCFI1:
+  36              		.cfi_def_cfa_offset 16
+  37              	.LBB2:
+  39:Src/dma.c     ****   /* DMA controller clock enable */
+  40:Src/dma.c     ****   __HAL_RCC_DMA1_CLK_ENABLE();
+  38              		.loc 1 40 0
+  39 0004 0A4B     		ldr	r3, .L3
+  40 0006 5A69     		ldr	r2, [r3, #20]
+  41 0008 42F00102 		orr	r2, r2, #1
+  42 000c 5A61     		str	r2, [r3, #20]
+  43 000e 5B69     		ldr	r3, [r3, #20]
+  44 0010 03F00103 		and	r3, r3, #1
+  45 0014 0193     		str	r3, [sp, #4]
+  46 0016 019B     		ldr	r3, [sp, #4]
+  47              	.LBE2:
+  41:Src/dma.c     **** 
+  42:Src/dma.c     ****   /* DMA interrupt init */
+  43:Src/dma.c     ****   /* DMA1_Channel1_IRQn interrupt configuration */
+  44:Src/dma.c     ****   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  48              		.loc 1 44 0
+  49 0018 0022     		movs	r2, #0
+  50 001a 1146     		mov	r1, r2
+  51 001c 0B20     		movs	r0, #11
+  52 001e FFF7FEFF 		bl	HAL_NVIC_SetPriority
+  53              	.LVL0:
+  45:Src/dma.c     ****   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  54              		.loc 1 45 0
+  55 0022 0B20     		movs	r0, #11
+  56 0024 FFF7FEFF 		bl	HAL_NVIC_EnableIRQ
+  57              	.LVL1:
+  46:Src/dma.c     **** 
+  47:Src/dma.c     **** }
+  58              		.loc 1 47 0
+  59 0028 03B0     		add	sp, sp, #12
+  60              	.LCFI2:
+  61              		.cfi_def_cfa_offset 4
+  62              		@ sp needed
+  63 002a 5DF804FB 		ldr	pc, [sp], #4
+  64              	.L4:
+  65 002e 00BF     		.align	2
+  66              	.L3:
+  67 0030 00100240 		.word	1073876992
+  68              		.cfi_endproc
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s 			page 3
+
+
+  69              	.LFE66:
+  71              		.text
+  72              	.Letext0:
+  73              		.file 2 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+  74              		.file 3 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+  75              		.file 4 "Drivers/CMSIS/Include/core_cm3.h"
+  76              		.file 5 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h"
+  77              		.file 6 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
+  78              		.file 7 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+  79              		.file 8 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+  80              		.file 9 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\lib
+  81              		.file 10 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+  82              		.file 11 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
+  83              		.file 12 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h"
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s 			page 4
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 dma.c
+C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s:16     .text.MX_DMA_Init:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s:23     .text.MX_DMA_Init:00000000 MX_DMA_Init
+C:\Users\Patrick\AppData\Local\Temp\ccH2pP4g.s:67     .text.MX_DMA_Init:00000030 $d
+
+UNDEFINED SYMBOLS
+HAL_NVIC_SetPriority
+HAL_NVIC_EnableIRQ

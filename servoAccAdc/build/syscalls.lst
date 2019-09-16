@@ -1,0 +1,939 @@
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 1
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"syscalls.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text._sbrk,"ax",%progbits
+  16              		.align	1
+  17              		.global	_sbrk
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	_sbrk:
+  24              	.LFB19:
+  25              		.file 1 "syscalls.c"
+   1:syscalls.c    **** /* Support files for GNU libc.  Files in the system namespace go here.
+   2:syscalls.c    ****    Files in the C namespace (ie those that do not start with an
+   3:syscalls.c    ****    underscore) go in .c.  */
+   4:syscalls.c    **** 
+   5:syscalls.c    **** #include <_ansi.h>
+   6:syscalls.c    **** #include <sys/types.h>
+   7:syscalls.c    **** #include <sys/stat.h>
+   8:syscalls.c    **** #include <sys/fcntl.h>
+   9:syscalls.c    **** #include <stdio.h>
+  10:syscalls.c    **** #include <string.h>
+  11:syscalls.c    **** #include <time.h>
+  12:syscalls.c    **** #include <sys/time.h>
+  13:syscalls.c    **** #include <sys/times.h>
+  14:syscalls.c    **** #include <errno.h>
+  15:syscalls.c    **** #include <reent.h>
+  16:syscalls.c    **** #include <unistd.h>
+  17:syscalls.c    **** #include <sys/wait.h>
+  18:syscalls.c    **** 
+  19:syscalls.c    **** 
+  20:syscalls.c    **** 
+  21:syscalls.c    **** #define FreeRTOS
+  22:syscalls.c    **** #define MAX_STACK_SIZE 0x500
+  23:syscalls.c    **** 
+  24:syscalls.c    **** extern int __io_putchar(int ch) __attribute__((weak));
+  25:syscalls.c    **** extern int __io_getchar(void) __attribute__((weak));
+  26:syscalls.c    **** 
+  27:syscalls.c    **** #ifndef FreeRTOS
+  28:syscalls.c    ****   register char * stack_ptr asm("sp");
+  29:syscalls.c    **** #endif
+  30:syscalls.c    **** 
+  31:syscalls.c    **** 
+  32:syscalls.c    **** 
+  33:syscalls.c    **** 
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 2
+
+
+  34:syscalls.c    **** caddr_t _sbrk(int incr)
+  35:syscalls.c    **** {
+  26              		.loc 1 35 0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              	.LVL0:
+  31 0000 08B5     		push	{r3, lr}
+  32              	.LCFI0:
+  33              		.cfi_def_cfa_offset 8
+  34              		.cfi_offset 3, -8
+  35              		.cfi_offset 14, -4
+  36 0002 0346     		mov	r3, r0
+  36:syscalls.c    **** 	extern char end asm("end");
+  37:syscalls.c    **** 	static char *heap_end;
+  38:syscalls.c    **** 	char *prev_heap_end,*min_stack_ptr;
+  39:syscalls.c    **** 
+  40:syscalls.c    **** 	if (heap_end == 0)
+  37              		.loc 1 40 0
+  38 0004 0D4A     		ldr	r2, .L8
+  39 0006 1268     		ldr	r2, [r2]
+  40 0008 62B1     		cbz	r2, .L6
+  41              	.L2:
+  41:syscalls.c    **** 		heap_end = &end;
+  42:syscalls.c    **** 
+  43:syscalls.c    **** 	prev_heap_end = heap_end;
+  42              		.loc 1 43 0
+  43 000a 0C4A     		ldr	r2, .L8
+  44 000c 1068     		ldr	r0, [r2]
+  45              	.LVL1:
+  44:syscalls.c    **** 
+  45:syscalls.c    **** #ifdef FreeRTOS
+  46:syscalls.c    **** 	/* Use the NVIC offset register to locate the main stack pointer. */
+  47:syscalls.c    **** 	min_stack_ptr = (char*)(*(unsigned int *)*(unsigned int *)0xE000ED08);
+  46              		.loc 1 47 0
+  47 000e 0C4A     		ldr	r2, .L8+4
+  48 0010 1268     		ldr	r2, [r2]
+  49 0012 1268     		ldr	r2, [r2]
+  50              	.LVL2:
+  48:syscalls.c    **** 	/* Locate the STACK bottom address */
+  49:syscalls.c    **** 	min_stack_ptr -= MAX_STACK_SIZE;
+  51              		.loc 1 49 0
+  52 0014 A2F5A062 		sub	r2, r2, #1280
+  53              	.LVL3:
+  50:syscalls.c    **** 
+  51:syscalls.c    **** 	if (heap_end + incr > min_stack_ptr)
+  54              		.loc 1 51 0
+  55 0018 0344     		add	r3, r3, r0
+  56              	.LVL4:
+  57 001a 9342     		cmp	r3, r2
+  58 001c 06D8     		bhi	.L7
+  52:syscalls.c    **** #else
+  53:syscalls.c    **** 	if (heap_end + incr > stack_ptr)
+  54:syscalls.c    **** #endif
+  55:syscalls.c    **** 	{
+  56:syscalls.c    **** //		write(1, "Heap and stack collision\n", 25);
+  57:syscalls.c    **** //		abort();
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 3
+
+
+  58:syscalls.c    **** 		errno = ENOMEM;
+  59:syscalls.c    **** 		return (caddr_t) -1;
+  60:syscalls.c    **** 	}
+  61:syscalls.c    **** 
+  62:syscalls.c    **** 	heap_end += incr;
+  59              		.loc 1 62 0
+  60 001e 074A     		ldr	r2, .L8
+  61              	.LVL5:
+  62 0020 1360     		str	r3, [r2]
+  63              	.LVL6:
+  64              	.L1:
+  63:syscalls.c    **** 
+  64:syscalls.c    **** 	return (caddr_t) prev_heap_end;
+  65:syscalls.c    **** }
+  65              		.loc 1 65 0
+  66 0022 08BD     		pop	{r3, pc}
+  67              	.LVL7:
+  68              	.L6:
+  41:syscalls.c    **** 
+  69              		.loc 1 41 0
+  70 0024 054A     		ldr	r2, .L8
+  71 0026 0749     		ldr	r1, .L8+8
+  72 0028 1160     		str	r1, [r2]
+  73 002a EEE7     		b	.L2
+  74              	.LVL8:
+  75              	.L7:
+  58:syscalls.c    **** 		return (caddr_t) -1;
+  76              		.loc 1 58 0
+  77 002c FFF7FEFF 		bl	__errno
+  78              	.LVL9:
+  79 0030 0C23     		movs	r3, #12
+  80 0032 0360     		str	r3, [r0]
+  59:syscalls.c    **** 	}
+  81              		.loc 1 59 0
+  82 0034 4FF0FF30 		mov	r0, #-1
+  83 0038 F3E7     		b	.L1
+  84              	.L9:
+  85 003a 00BF     		.align	2
+  86              	.L8:
+  87 003c 00000000 		.word	.LANCHOR0
+  88 0040 08ED00E0 		.word	-536810232
+  89 0044 00000000 		.word	end
+  90              		.cfi_endproc
+  91              	.LFE19:
+  93              		.section	.text._gettimeofday,"ax",%progbits
+  94              		.align	1
+  95              		.global	_gettimeofday
+  96              		.syntax unified
+  97              		.thumb
+  98              		.thumb_func
+  99              		.fpu softvfp
+ 101              	_gettimeofday:
+ 102              	.LFB20:
+  66:syscalls.c    **** 
+  67:syscalls.c    **** /*
+  68:syscalls.c    ****  * _gettimeofday primitive (Stub function)
+  69:syscalls.c    ****  * */
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 4
+
+
+  70:syscalls.c    **** int _gettimeofday (struct timeval * tp, struct timezone * tzp)
+  71:syscalls.c    **** {
+ 103              		.loc 1 71 0
+ 104              		.cfi_startproc
+ 105              		@ args = 0, pretend = 0, frame = 0
+ 106              		@ frame_needed = 0, uses_anonymous_args = 0
+ 107              		@ link register save eliminated.
+ 108              	.LVL10:
+  72:syscalls.c    ****   /* Return fixed data for the timezone.  */
+  73:syscalls.c    ****   if (tzp)
+ 109              		.loc 1 73 0
+ 110 0000 11B1     		cbz	r1, .L11
+  74:syscalls.c    ****     {
+  75:syscalls.c    ****       tzp->tz_minuteswest = 0;
+ 111              		.loc 1 75 0
+ 112 0002 0022     		movs	r2, #0
+ 113 0004 0A60     		str	r2, [r1]
+  76:syscalls.c    ****       tzp->tz_dsttime = 0;
+ 114              		.loc 1 76 0
+ 115 0006 4A60     		str	r2, [r1, #4]
+ 116              	.L11:
+  77:syscalls.c    ****     }
+  78:syscalls.c    **** 
+  79:syscalls.c    ****   return 0;
+  80:syscalls.c    **** }
+ 117              		.loc 1 80 0
+ 118 0008 0020     		movs	r0, #0
+ 119              	.LVL11:
+ 120 000a 7047     		bx	lr
+ 121              		.cfi_endproc
+ 122              	.LFE20:
+ 124              		.section	.text.initialise_monitor_handles,"ax",%progbits
+ 125              		.align	1
+ 126              		.global	initialise_monitor_handles
+ 127              		.syntax unified
+ 128              		.thumb
+ 129              		.thumb_func
+ 130              		.fpu softvfp
+ 132              	initialise_monitor_handles:
+ 133              	.LFB21:
+  81:syscalls.c    **** void initialise_monitor_handles()
+  82:syscalls.c    **** {
+ 134              		.loc 1 82 0
+ 135              		.cfi_startproc
+ 136              		@ args = 0, pretend = 0, frame = 0
+ 137              		@ frame_needed = 0, uses_anonymous_args = 0
+ 138              		@ link register save eliminated.
+  83:syscalls.c    **** }
+ 139              		.loc 1 83 0
+ 140 0000 7047     		bx	lr
+ 141              		.cfi_endproc
+ 142              	.LFE21:
+ 144              		.section	.text._getpid,"ax",%progbits
+ 145              		.align	1
+ 146              		.global	_getpid
+ 147              		.syntax unified
+ 148              		.thumb
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 5
+
+
+ 149              		.thumb_func
+ 150              		.fpu softvfp
+ 152              	_getpid:
+ 153              	.LFB22:
+  84:syscalls.c    **** 
+  85:syscalls.c    **** int _getpid(void)
+  86:syscalls.c    **** {
+ 154              		.loc 1 86 0
+ 155              		.cfi_startproc
+ 156              		@ args = 0, pretend = 0, frame = 0
+ 157              		@ frame_needed = 0, uses_anonymous_args = 0
+ 158              		@ link register save eliminated.
+  87:syscalls.c    **** 	return 1;
+  88:syscalls.c    **** }
+ 159              		.loc 1 88 0
+ 160 0000 0120     		movs	r0, #1
+ 161 0002 7047     		bx	lr
+ 162              		.cfi_endproc
+ 163              	.LFE22:
+ 165              		.section	.text._kill,"ax",%progbits
+ 166              		.align	1
+ 167              		.global	_kill
+ 168              		.syntax unified
+ 169              		.thumb
+ 170              		.thumb_func
+ 171              		.fpu softvfp
+ 173              	_kill:
+ 174              	.LFB23:
+  89:syscalls.c    **** 
+  90:syscalls.c    **** int _kill(int pid, int sig)
+  91:syscalls.c    **** {
+ 175              		.loc 1 91 0
+ 176              		.cfi_startproc
+ 177              		@ args = 0, pretend = 0, frame = 0
+ 178              		@ frame_needed = 0, uses_anonymous_args = 0
+ 179              	.LVL12:
+ 180 0000 08B5     		push	{r3, lr}
+ 181              	.LCFI1:
+ 182              		.cfi_def_cfa_offset 8
+ 183              		.cfi_offset 3, -8
+ 184              		.cfi_offset 14, -4
+  92:syscalls.c    **** 	errno = EINVAL;
+ 185              		.loc 1 92 0
+ 186 0002 FFF7FEFF 		bl	__errno
+ 187              	.LVL13:
+ 188 0006 1623     		movs	r3, #22
+ 189 0008 0360     		str	r3, [r0]
+  93:syscalls.c    **** 	return -1;
+  94:syscalls.c    **** }
+ 190              		.loc 1 94 0
+ 191 000a 4FF0FF30 		mov	r0, #-1
+ 192 000e 08BD     		pop	{r3, pc}
+ 193              		.cfi_endproc
+ 194              	.LFE23:
+ 196              		.section	.text._exit,"ax",%progbits
+ 197              		.align	1
+ 198              		.global	_exit
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 6
+
+
+ 199              		.syntax unified
+ 200              		.thumb
+ 201              		.thumb_func
+ 202              		.fpu softvfp
+ 204              	_exit:
+ 205              	.LFB24:
+  95:syscalls.c    **** 
+  96:syscalls.c    **** void _exit (int status)
+  97:syscalls.c    **** {
+ 206              		.loc 1 97 0
+ 207              		.cfi_startproc
+ 208              		@ Volatile: function does not return.
+ 209              		@ args = 0, pretend = 0, frame = 0
+ 210              		@ frame_needed = 0, uses_anonymous_args = 0
+ 211              	.LVL14:
+ 212 0000 08B5     		push	{r3, lr}
+ 213              	.LCFI2:
+ 214              		.cfi_def_cfa_offset 8
+ 215              		.cfi_offset 3, -8
+ 216              		.cfi_offset 14, -4
+  98:syscalls.c    **** 	_kill(status, -1);
+ 217              		.loc 1 98 0
+ 218 0002 4FF0FF31 		mov	r1, #-1
+ 219 0006 FFF7FEFF 		bl	_kill
+ 220              	.LVL15:
+ 221              	.L17:
+ 222 000a FEE7     		b	.L17
+ 223              		.cfi_endproc
+ 224              	.LFE24:
+ 226              		.section	.text._write,"ax",%progbits
+ 227              		.align	1
+ 228              		.global	_write
+ 229              		.syntax unified
+ 230              		.thumb
+ 231              		.thumb_func
+ 232              		.fpu softvfp
+ 234              	_write:
+ 235              	.LFB25:
+  99:syscalls.c    **** 	while (1) {}
+ 100:syscalls.c    **** }
+ 101:syscalls.c    **** 
+ 102:syscalls.c    **** int _write(int file, char *ptr, int len)
+ 103:syscalls.c    **** {
+ 236              		.loc 1 103 0
+ 237              		.cfi_startproc
+ 238              		@ args = 0, pretend = 0, frame = 0
+ 239              		@ frame_needed = 0, uses_anonymous_args = 0
+ 240              	.LVL16:
+ 241 0000 70B5     		push	{r4, r5, r6, lr}
+ 242              	.LCFI3:
+ 243              		.cfi_def_cfa_offset 16
+ 244              		.cfi_offset 4, -16
+ 245              		.cfi_offset 5, -12
+ 246              		.cfi_offset 6, -8
+ 247              		.cfi_offset 14, -4
+ 248 0002 1646     		mov	r6, r2
+ 249              	.LVL17:
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 7
+
+
+ 104:syscalls.c    **** 	int DataIdx;
+ 105:syscalls.c    **** 
+ 106:syscalls.c    **** 		for (DataIdx = 0; DataIdx < len; DataIdx++)
+ 250              		.loc 1 106 0
+ 251 0004 0024     		movs	r4, #0
+ 252 0006 05E0     		b	.L20
+ 253              	.LVL18:
+ 254              	.L21:
+ 107:syscalls.c    **** 		{
+ 108:syscalls.c    **** 		   __io_putchar( *ptr++ );
+ 255              		.loc 1 108 0 discriminator 3
+ 256 0008 4D1C     		adds	r5, r1, #1
+ 257              	.LVL19:
+ 258 000a 0878     		ldrb	r0, [r1]	@ zero_extendqisi2
+ 259 000c FFF7FEFF 		bl	__io_putchar
+ 260              	.LVL20:
+ 106:syscalls.c    **** 		{
+ 261              		.loc 1 106 0 discriminator 3
+ 262 0010 0134     		adds	r4, r4, #1
+ 263              	.LVL21:
+ 264              		.loc 1 108 0 discriminator 3
+ 265 0012 2946     		mov	r1, r5
+ 266              	.LVL22:
+ 267              	.L20:
+ 106:syscalls.c    **** 		{
+ 268              		.loc 1 106 0 discriminator 1
+ 269 0014 B442     		cmp	r4, r6
+ 270 0016 F7DB     		blt	.L21
+ 109:syscalls.c    **** 		}
+ 110:syscalls.c    **** 	return len;
+ 111:syscalls.c    **** }
+ 271              		.loc 1 111 0
+ 272 0018 3046     		mov	r0, r6
+ 273 001a 70BD     		pop	{r4, r5, r6, pc}
+ 274              		.cfi_endproc
+ 275              	.LFE25:
+ 277              		.section	.text._close,"ax",%progbits
+ 278              		.align	1
+ 279              		.global	_close
+ 280              		.syntax unified
+ 281              		.thumb
+ 282              		.thumb_func
+ 283              		.fpu softvfp
+ 285              	_close:
+ 286              	.LFB26:
+ 112:syscalls.c    **** 
+ 113:syscalls.c    **** int _close(int file)
+ 114:syscalls.c    **** {
+ 287              		.loc 1 114 0
+ 288              		.cfi_startproc
+ 289              		@ args = 0, pretend = 0, frame = 0
+ 290              		@ frame_needed = 0, uses_anonymous_args = 0
+ 291              		@ link register save eliminated.
+ 292              	.LVL23:
+ 115:syscalls.c    **** 	return -1;
+ 116:syscalls.c    **** }
+ 293              		.loc 1 116 0
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 8
+
+
+ 294 0000 4FF0FF30 		mov	r0, #-1
+ 295              	.LVL24:
+ 296 0004 7047     		bx	lr
+ 297              		.cfi_endproc
+ 298              	.LFE26:
+ 300              		.section	.text._fstat,"ax",%progbits
+ 301              		.align	1
+ 302              		.global	_fstat
+ 303              		.syntax unified
+ 304              		.thumb
+ 305              		.thumb_func
+ 306              		.fpu softvfp
+ 308              	_fstat:
+ 309              	.LFB27:
+ 117:syscalls.c    **** 
+ 118:syscalls.c    **** int _fstat(int file, struct stat *st)
+ 119:syscalls.c    **** {
+ 310              		.loc 1 119 0
+ 311              		.cfi_startproc
+ 312              		@ args = 0, pretend = 0, frame = 0
+ 313              		@ frame_needed = 0, uses_anonymous_args = 0
+ 314              		@ link register save eliminated.
+ 315              	.LVL25:
+ 120:syscalls.c    **** 	st->st_mode = S_IFCHR;
+ 316              		.loc 1 120 0
+ 317 0000 4FF40053 		mov	r3, #8192
+ 318 0004 4B60     		str	r3, [r1, #4]
+ 121:syscalls.c    **** 	return 0;
+ 122:syscalls.c    **** }
+ 319              		.loc 1 122 0
+ 320 0006 0020     		movs	r0, #0
+ 321              	.LVL26:
+ 322 0008 7047     		bx	lr
+ 323              		.cfi_endproc
+ 324              	.LFE27:
+ 326              		.section	.text._isatty,"ax",%progbits
+ 327              		.align	1
+ 328              		.global	_isatty
+ 329              		.syntax unified
+ 330              		.thumb
+ 331              		.thumb_func
+ 332              		.fpu softvfp
+ 334              	_isatty:
+ 335              	.LFB28:
+ 123:syscalls.c    **** 
+ 124:syscalls.c    **** int _isatty(int file)
+ 125:syscalls.c    **** {
+ 336              		.loc 1 125 0
+ 337              		.cfi_startproc
+ 338              		@ args = 0, pretend = 0, frame = 0
+ 339              		@ frame_needed = 0, uses_anonymous_args = 0
+ 340              		@ link register save eliminated.
+ 341              	.LVL27:
+ 126:syscalls.c    **** 	return 1;
+ 127:syscalls.c    **** }
+ 342              		.loc 1 127 0
+ 343 0000 0120     		movs	r0, #1
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 9
+
+
+ 344              	.LVL28:
+ 345 0002 7047     		bx	lr
+ 346              		.cfi_endproc
+ 347              	.LFE28:
+ 349              		.section	.text._lseek,"ax",%progbits
+ 350              		.align	1
+ 351              		.global	_lseek
+ 352              		.syntax unified
+ 353              		.thumb
+ 354              		.thumb_func
+ 355              		.fpu softvfp
+ 357              	_lseek:
+ 358              	.LFB29:
+ 128:syscalls.c    **** 
+ 129:syscalls.c    **** int _lseek(int file, int ptr, int dir)
+ 130:syscalls.c    **** {
+ 359              		.loc 1 130 0
+ 360              		.cfi_startproc
+ 361              		@ args = 0, pretend = 0, frame = 0
+ 362              		@ frame_needed = 0, uses_anonymous_args = 0
+ 363              		@ link register save eliminated.
+ 364              	.LVL29:
+ 131:syscalls.c    **** 	return 0;
+ 132:syscalls.c    **** }
+ 365              		.loc 1 132 0
+ 366 0000 0020     		movs	r0, #0
+ 367              	.LVL30:
+ 368 0002 7047     		bx	lr
+ 369              		.cfi_endproc
+ 370              	.LFE29:
+ 372              		.section	.text._read,"ax",%progbits
+ 373              		.align	1
+ 374              		.global	_read
+ 375              		.syntax unified
+ 376              		.thumb
+ 377              		.thumb_func
+ 378              		.fpu softvfp
+ 380              	_read:
+ 381              	.LFB30:
+ 133:syscalls.c    **** 
+ 134:syscalls.c    **** int _read(int file, char *ptr, int len)
+ 135:syscalls.c    **** {
+ 382              		.loc 1 135 0
+ 383              		.cfi_startproc
+ 384              		@ args = 0, pretend = 0, frame = 0
+ 385              		@ frame_needed = 0, uses_anonymous_args = 0
+ 386              	.LVL31:
+ 387 0000 70B5     		push	{r4, r5, r6, lr}
+ 388              	.LCFI4:
+ 389              		.cfi_def_cfa_offset 16
+ 390              		.cfi_offset 4, -16
+ 391              		.cfi_offset 5, -12
+ 392              		.cfi_offset 6, -8
+ 393              		.cfi_offset 14, -4
+ 394 0002 0D46     		mov	r5, r1
+ 395 0004 1646     		mov	r6, r2
+ 396              	.LVL32:
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 10
+
+
+ 136:syscalls.c    **** 	int DataIdx;
+ 137:syscalls.c    **** 
+ 138:syscalls.c    **** 	for (DataIdx = 0; DataIdx < len; DataIdx++)
+ 397              		.loc 1 138 0
+ 398 0006 0024     		movs	r4, #0
+ 399 0008 04E0     		b	.L28
+ 400              	.LVL33:
+ 401              	.L29:
+ 139:syscalls.c    **** 	{
+ 140:syscalls.c    **** 	  *ptr++ = __io_getchar();
+ 402              		.loc 1 140 0 discriminator 3
+ 403 000a FFF7FEFF 		bl	__io_getchar
+ 404              	.LVL34:
+ 405 000e 2870     		strb	r0, [r5]
+ 138:syscalls.c    **** 	{
+ 406              		.loc 1 138 0 discriminator 3
+ 407 0010 0134     		adds	r4, r4, #1
+ 408              	.LVL35:
+ 409              		.loc 1 140 0 discriminator 3
+ 410 0012 0135     		adds	r5, r5, #1
+ 411              	.LVL36:
+ 412              	.L28:
+ 138:syscalls.c    **** 	{
+ 413              		.loc 1 138 0 discriminator 1
+ 414 0014 B442     		cmp	r4, r6
+ 415 0016 F8DB     		blt	.L29
+ 141:syscalls.c    **** 	}
+ 142:syscalls.c    **** 
+ 143:syscalls.c    ****    return len;
+ 144:syscalls.c    **** }
+ 416              		.loc 1 144 0
+ 417 0018 3046     		mov	r0, r6
+ 418 001a 70BD     		pop	{r4, r5, r6, pc}
+ 419              		.cfi_endproc
+ 420              	.LFE30:
+ 422              		.section	.text._open,"ax",%progbits
+ 423              		.align	1
+ 424              		.global	_open
+ 425              		.syntax unified
+ 426              		.thumb
+ 427              		.thumb_func
+ 428              		.fpu softvfp
+ 430              	_open:
+ 431              	.LFB31:
+ 145:syscalls.c    **** 
+ 146:syscalls.c    **** int _open(char *path, int flags, ...)
+ 147:syscalls.c    **** {
+ 432              		.loc 1 147 0
+ 433              		.cfi_startproc
+ 434              		@ args = 4, pretend = 12, frame = 0
+ 435              		@ frame_needed = 0, uses_anonymous_args = 1
+ 436              		@ link register save eliminated.
+ 437              	.LVL37:
+ 438 0000 0EB4     		push	{r1, r2, r3}
+ 439              	.LCFI5:
+ 440              		.cfi_def_cfa_offset 12
+ 441              		.cfi_offset 1, -12
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 11
+
+
+ 442              		.cfi_offset 2, -8
+ 443              		.cfi_offset 3, -4
+ 148:syscalls.c    **** 	/* Pretend like we always fail */
+ 149:syscalls.c    **** 	return -1;
+ 150:syscalls.c    **** }
+ 444              		.loc 1 150 0
+ 445 0002 4FF0FF30 		mov	r0, #-1
+ 446              	.LVL38:
+ 447 0006 03B0     		add	sp, sp, #12
+ 448              	.LCFI6:
+ 449              		.cfi_restore 3
+ 450              		.cfi_restore 2
+ 451              		.cfi_restore 1
+ 452              		.cfi_def_cfa_offset 0
+ 453 0008 7047     		bx	lr
+ 454              		.cfi_endproc
+ 455              	.LFE31:
+ 457              		.section	.text._wait,"ax",%progbits
+ 458              		.align	1
+ 459              		.global	_wait
+ 460              		.syntax unified
+ 461              		.thumb
+ 462              		.thumb_func
+ 463              		.fpu softvfp
+ 465              	_wait:
+ 466              	.LFB32:
+ 151:syscalls.c    **** 
+ 152:syscalls.c    **** int _wait(int *status)
+ 153:syscalls.c    **** {
+ 467              		.loc 1 153 0
+ 468              		.cfi_startproc
+ 469              		@ args = 0, pretend = 0, frame = 0
+ 470              		@ frame_needed = 0, uses_anonymous_args = 0
+ 471              	.LVL39:
+ 472 0000 08B5     		push	{r3, lr}
+ 473              	.LCFI7:
+ 474              		.cfi_def_cfa_offset 8
+ 475              		.cfi_offset 3, -8
+ 476              		.cfi_offset 14, -4
+ 154:syscalls.c    **** 	errno = ECHILD;
+ 477              		.loc 1 154 0
+ 478 0002 FFF7FEFF 		bl	__errno
+ 479              	.LVL40:
+ 480 0006 0A23     		movs	r3, #10
+ 481 0008 0360     		str	r3, [r0]
+ 155:syscalls.c    **** 	return -1;
+ 156:syscalls.c    **** }
+ 482              		.loc 1 156 0
+ 483 000a 4FF0FF30 		mov	r0, #-1
+ 484 000e 08BD     		pop	{r3, pc}
+ 485              		.cfi_endproc
+ 486              	.LFE32:
+ 488              		.section	.text._unlink,"ax",%progbits
+ 489              		.align	1
+ 490              		.global	_unlink
+ 491              		.syntax unified
+ 492              		.thumb
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 12
+
+
+ 493              		.thumb_func
+ 494              		.fpu softvfp
+ 496              	_unlink:
+ 497              	.LFB33:
+ 157:syscalls.c    **** 
+ 158:syscalls.c    **** int _unlink(char *name)
+ 159:syscalls.c    **** {
+ 498              		.loc 1 159 0
+ 499              		.cfi_startproc
+ 500              		@ args = 0, pretend = 0, frame = 0
+ 501              		@ frame_needed = 0, uses_anonymous_args = 0
+ 502              	.LVL41:
+ 503 0000 08B5     		push	{r3, lr}
+ 504              	.LCFI8:
+ 505              		.cfi_def_cfa_offset 8
+ 506              		.cfi_offset 3, -8
+ 507              		.cfi_offset 14, -4
+ 160:syscalls.c    **** 	errno = ENOENT;
+ 508              		.loc 1 160 0
+ 509 0002 FFF7FEFF 		bl	__errno
+ 510              	.LVL42:
+ 511 0006 0223     		movs	r3, #2
+ 512 0008 0360     		str	r3, [r0]
+ 161:syscalls.c    **** 	return -1;
+ 162:syscalls.c    **** }
+ 513              		.loc 1 162 0
+ 514 000a 4FF0FF30 		mov	r0, #-1
+ 515 000e 08BD     		pop	{r3, pc}
+ 516              		.cfi_endproc
+ 517              	.LFE33:
+ 519              		.section	.text._times,"ax",%progbits
+ 520              		.align	1
+ 521              		.global	_times
+ 522              		.syntax unified
+ 523              		.thumb
+ 524              		.thumb_func
+ 525              		.fpu softvfp
+ 527              	_times:
+ 528              	.LFB34:
+ 163:syscalls.c    **** 
+ 164:syscalls.c    **** int _times(struct tms *buf)
+ 165:syscalls.c    **** {
+ 529              		.loc 1 165 0
+ 530              		.cfi_startproc
+ 531              		@ args = 0, pretend = 0, frame = 0
+ 532              		@ frame_needed = 0, uses_anonymous_args = 0
+ 533              		@ link register save eliminated.
+ 534              	.LVL43:
+ 166:syscalls.c    **** 	return -1;
+ 167:syscalls.c    **** }
+ 535              		.loc 1 167 0
+ 536 0000 4FF0FF30 		mov	r0, #-1
+ 537              	.LVL44:
+ 538 0004 7047     		bx	lr
+ 539              		.cfi_endproc
+ 540              	.LFE34:
+ 542              		.section	.text._stat,"ax",%progbits
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 13
+
+
+ 543              		.align	1
+ 544              		.global	_stat
+ 545              		.syntax unified
+ 546              		.thumb
+ 547              		.thumb_func
+ 548              		.fpu softvfp
+ 550              	_stat:
+ 551              	.LFB35:
+ 168:syscalls.c    **** 
+ 169:syscalls.c    **** int _stat(char *file, struct stat *st)
+ 170:syscalls.c    **** {
+ 552              		.loc 1 170 0
+ 553              		.cfi_startproc
+ 554              		@ args = 0, pretend = 0, frame = 0
+ 555              		@ frame_needed = 0, uses_anonymous_args = 0
+ 556              		@ link register save eliminated.
+ 557              	.LVL45:
+ 171:syscalls.c    **** 	st->st_mode = S_IFCHR;
+ 558              		.loc 1 171 0
+ 559 0000 4FF40053 		mov	r3, #8192
+ 560 0004 4B60     		str	r3, [r1, #4]
+ 172:syscalls.c    **** 	return 0;
+ 173:syscalls.c    **** }
+ 561              		.loc 1 173 0
+ 562 0006 0020     		movs	r0, #0
+ 563              	.LVL46:
+ 564 0008 7047     		bx	lr
+ 565              		.cfi_endproc
+ 566              	.LFE35:
+ 568              		.section	.text._link,"ax",%progbits
+ 569              		.align	1
+ 570              		.global	_link
+ 571              		.syntax unified
+ 572              		.thumb
+ 573              		.thumb_func
+ 574              		.fpu softvfp
+ 576              	_link:
+ 577              	.LFB36:
+ 174:syscalls.c    **** 
+ 175:syscalls.c    **** int _link(char *old, char *new)
+ 176:syscalls.c    **** {
+ 578              		.loc 1 176 0
+ 579              		.cfi_startproc
+ 580              		@ args = 0, pretend = 0, frame = 0
+ 581              		@ frame_needed = 0, uses_anonymous_args = 0
+ 582              	.LVL47:
+ 583 0000 08B5     		push	{r3, lr}
+ 584              	.LCFI9:
+ 585              		.cfi_def_cfa_offset 8
+ 586              		.cfi_offset 3, -8
+ 587              		.cfi_offset 14, -4
+ 177:syscalls.c    **** 	errno = EMLINK;
+ 588              		.loc 1 177 0
+ 589 0002 FFF7FEFF 		bl	__errno
+ 590              	.LVL48:
+ 591 0006 1F23     		movs	r3, #31
+ 592 0008 0360     		str	r3, [r0]
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 14
+
+
+ 178:syscalls.c    **** 	return -1;
+ 179:syscalls.c    **** }
+ 593              		.loc 1 179 0
+ 594 000a 4FF0FF30 		mov	r0, #-1
+ 595 000e 08BD     		pop	{r3, pc}
+ 596              		.cfi_endproc
+ 597              	.LFE36:
+ 599              		.section	.text._fork,"ax",%progbits
+ 600              		.align	1
+ 601              		.global	_fork
+ 602              		.syntax unified
+ 603              		.thumb
+ 604              		.thumb_func
+ 605              		.fpu softvfp
+ 607              	_fork:
+ 608              	.LFB37:
+ 180:syscalls.c    **** 
+ 181:syscalls.c    **** int _fork(void)
+ 182:syscalls.c    **** {
+ 609              		.loc 1 182 0
+ 610              		.cfi_startproc
+ 611              		@ args = 0, pretend = 0, frame = 0
+ 612              		@ frame_needed = 0, uses_anonymous_args = 0
+ 613 0000 08B5     		push	{r3, lr}
+ 614              	.LCFI10:
+ 615              		.cfi_def_cfa_offset 8
+ 616              		.cfi_offset 3, -8
+ 617              		.cfi_offset 14, -4
+ 183:syscalls.c    **** 	errno = EAGAIN;
+ 618              		.loc 1 183 0
+ 619 0002 FFF7FEFF 		bl	__errno
+ 620              	.LVL49:
+ 621 0006 0B23     		movs	r3, #11
+ 622 0008 0360     		str	r3, [r0]
+ 184:syscalls.c    **** 	return -1;
+ 185:syscalls.c    **** }
+ 623              		.loc 1 185 0
+ 624 000a 4FF0FF30 		mov	r0, #-1
+ 625 000e 08BD     		pop	{r3, pc}
+ 626              		.cfi_endproc
+ 627              	.LFE37:
+ 629              		.section	.text._execve,"ax",%progbits
+ 630              		.align	1
+ 631              		.global	_execve
+ 632              		.syntax unified
+ 633              		.thumb
+ 634              		.thumb_func
+ 635              		.fpu softvfp
+ 637              	_execve:
+ 638              	.LFB38:
+ 186:syscalls.c    **** 
+ 187:syscalls.c    **** int _execve(char *name, char **argv, char **env)
+ 188:syscalls.c    **** {
+ 639              		.loc 1 188 0
+ 640              		.cfi_startproc
+ 641              		@ args = 0, pretend = 0, frame = 0
+ 642              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 15
+
+
+ 643              	.LVL50:
+ 644 0000 08B5     		push	{r3, lr}
+ 645              	.LCFI11:
+ 646              		.cfi_def_cfa_offset 8
+ 647              		.cfi_offset 3, -8
+ 648              		.cfi_offset 14, -4
+ 189:syscalls.c    **** 	errno = ENOMEM;
+ 649              		.loc 1 189 0
+ 650 0002 FFF7FEFF 		bl	__errno
+ 651              	.LVL51:
+ 652 0006 0C23     		movs	r3, #12
+ 653 0008 0360     		str	r3, [r0]
+ 190:syscalls.c    **** 	return -1;
+ 191:syscalls.c    **** }
+ 654              		.loc 1 191 0
+ 655 000a 4FF0FF30 		mov	r0, #-1
+ 656 000e 08BD     		pop	{r3, pc}
+ 657              		.cfi_endproc
+ 658              	.LFE38:
+ 660              		.section	.bss.heap_end.6047,"aw",%nobits
+ 661              		.align	2
+ 662              		.set	.LANCHOR0,. + 0
+ 665              	heap_end.6047:
+ 666 0000 00000000 		.space	4
+ 667              		.weak	__io_getchar
+ 668              		.weak	__io_putchar
+ 669              		.text
+ 670              	.Letext0:
+ 671              		.file 2 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 672              		.file 3 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 673              		.file 4 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 674              		.file 5 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\lib
+ 675              		.file 6 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 676              		.file 7 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 677              		.file 8 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 678              		.file 9 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\arm
+ 679              		.file 10 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+ 680              		.file 11 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+ 681              		.file 12 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+ 682              		.file 13 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+ 683              		.file 14 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+ 684              		.file 15 "c:\\program files (x86)\\embedded toolchain\\gnu tools arm embedded\\7 2017-q4-major\\ar
+ARM GAS  C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s 			page 16
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 syscalls.c
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:16     .text._sbrk:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:23     .text._sbrk:00000000 _sbrk
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:87     .text._sbrk:0000003c $d
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:94     .text._gettimeofday:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:101    .text._gettimeofday:00000000 _gettimeofday
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:125    .text.initialise_monitor_handles:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:132    .text.initialise_monitor_handles:00000000 initialise_monitor_handles
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:145    .text._getpid:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:152    .text._getpid:00000000 _getpid
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:166    .text._kill:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:173    .text._kill:00000000 _kill
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:197    .text._exit:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:204    .text._exit:00000000 _exit
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:227    .text._write:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:234    .text._write:00000000 _write
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:278    .text._close:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:285    .text._close:00000000 _close
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:301    .text._fstat:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:308    .text._fstat:00000000 _fstat
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:327    .text._isatty:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:334    .text._isatty:00000000 _isatty
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:350    .text._lseek:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:357    .text._lseek:00000000 _lseek
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:373    .text._read:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:380    .text._read:00000000 _read
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:423    .text._open:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:430    .text._open:00000000 _open
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:458    .text._wait:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:465    .text._wait:00000000 _wait
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:489    .text._unlink:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:496    .text._unlink:00000000 _unlink
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:520    .text._times:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:527    .text._times:00000000 _times
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:543    .text._stat:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:550    .text._stat:00000000 _stat
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:569    .text._link:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:576    .text._link:00000000 _link
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:600    .text._fork:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:607    .text._fork:00000000 _fork
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:630    .text._execve:00000000 $t
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:637    .text._execve:00000000 _execve
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:661    .bss.heap_end.6047:00000000 $d
+C:\Users\Patrick\AppData\Local\Temp\ccsxT7YA.s:665    .bss.heap_end.6047:00000000 heap_end.6047
+
+UNDEFINED SYMBOLS
+__errno
+end
+__io_putchar
+__io_getchar
