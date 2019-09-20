@@ -80,7 +80,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint8_t mpuConfig;
-	uint16_t dutyCyle = 100;
+	uint16_t dutyCyle = 750;
   /* USER CODE END 1 */
   
 
@@ -112,7 +112,6 @@ int main(void)
   /* configura i2c */
   mpuConfig = 0b00000000;
   HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x6B, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
-//  HAL_TIM_Base_Start_IT(&htim3);
 
   /* inicia adc */
   HAL_TIM_Base_Start(&htim3);
@@ -132,19 +131,21 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  for (dutyCyle = 50; dutyCyle <= 260; ++dutyCyle) {
-		 // htim1.Instance->CCR1 = dutyCyle;
-		  //htim1.Instance->CCR2 = dutyCyle;
-		  HAL_Delay(15);
-	  }
-	  HAL_Delay(500);
-	  for (dutyCyle = 260; dutyCyle >= 50; --dutyCyle) {
-		 // htim1.Instance->CCR1 = dutyCyle;
+
+	  for (dutyCyle = 500; dutyCyle <= 1000; ++dutyCyle) {
+		  htim1.Instance->CCR1 = dutyCyle;
 		 // htim1.Instance->CCR2 = dutyCyle;
 		  HAL_Delay(15);
 	  }
 	  HAL_Delay(500);
+	  for (dutyCyle = 1000; dutyCyle >= 500; --dutyCyle) {
+		//  htim1.Instance->CCR1 = dutyCyle;
+		  htim1.Instance->CCR2 = dutyCyle;
+		  HAL_Delay(15);
+	  }
+	  HAL_Delay(500);
   }
+
   /* USER CODE END 3 */
 }
 
@@ -457,11 +458,14 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     uint32_t yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
     uint32_t zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
-    uint32_t servoPosition = 50 + 0.005* xAcc;
-   // htim1.Instance->CCR1 = servoPosition;
-   // htim1.Instance->CCR2 = servoPosition;
+    controle_asa();
 }
+void controle_asa(void){
 
+	uint32_t servoPosition = 12102  -16.13* adcVal[1];
+//	htim1.Instance->CCR2 = servoPosition;
+
+}
 /* USER CODE END 4 */
 
 /**
