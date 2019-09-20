@@ -132,19 +132,19 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  for (dutyCyle = 500; dutyCyle <= 1000; ++dutyCyle) {
-		  htim1.Instance->CCR1 = dutyCyle;
-		 // htim1.Instance->CCR2 = dutyCyle;
-		  HAL_Delay(15);
-	  }
-	  HAL_Delay(500);
-	  for (dutyCyle = 1000; dutyCyle >= 500; --dutyCyle) {
-		//  htim1.Instance->CCR1 = dutyCyle;
-		  htim1.Instance->CCR2 = dutyCyle;
-		  HAL_Delay(15);
-	  }
-	  HAL_Delay(500);
-  }
+//	  for (dutyCyle = 500; dutyCyle <= 1000; ++dutyCyle) {
+//		  htim1.Instance->CCR1 = dutyCyle;
+//		  htim1.Instance->CCR2 = dutyCyle;
+//		  HAL_Delay(15);
+//	  }
+//	  HAL_Delay(500);
+//	  for (dutyCyle = 1000; dutyCyle >= 500; --dutyCyle) {
+//		  htim1.Instance->CCR1 = dutyCyle;
+//		  htim1.Instance->CCR2 = dutyCyle;
+//		  HAL_Delay(15);
+//	  }
+//	  HAL_Delay(500);
+//  }
 
   /* USER CODE END 3 */
 }
