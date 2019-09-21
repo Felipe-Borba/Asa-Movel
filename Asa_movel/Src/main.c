@@ -53,6 +53,9 @@ TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN PV */
 uint32_t adcVal[2];
 uint8_t rawMpu[6];
+
+uint32_t xAcc, yAcc, zAcc;
+float throttle, brake;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,19 +135,20 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//	  for (dutyCyle = 500; dutyCyle <= 1000; ++dutyCyle) {
+//	  for (dutyCyle = 230; dutyCyle <= 1230; ++dutyCyle) {
 //		  htim1.Instance->CCR1 = dutyCyle;
 //		  htim1.Instance->CCR2 = dutyCyle;
-//		  HAL_Delay(15);
+//		  HAL_Delay(10);
 //	  }
-//	  HAL_Delay(500);
-//	  for (dutyCyle = 1000; dutyCyle >= 500; --dutyCyle) {
+//	  HAL_Delay(100);
+//	  for (dutyCyle = 1230; dutyCyle >= 230; --dutyCyle) {
 //		  htim1.Instance->CCR1 = dutyCyle;
 //		  htim1.Instance->CCR2 = dutyCyle;
-//		  HAL_Delay(15);
+//		  HAL_Delay(10);
 //	  }
-//	  HAL_Delay(500);
-//  }
+	  HAL_Delay(100);
+
+  }
 
   /* USER CODE END 3 */
 }
@@ -227,7 +231,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_41CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -441,11 +445,6 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(hadc);
-  /* NOTE : This function should not be modified. When the callback is needed,
-            function HAL_ADC_ConvCpltCallback must be implemented in the user file.
-   */
 
   HAL_I2C_Mem_Read_IT(&hi2c1, 0xD0, 0x3B, I2C_MEMADD_SIZE_8BIT, rawMpu, 6);
   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -453,19 +452,27 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    uint32_t xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
-    uint32_t yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
-    uint32_t zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
+//	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
+//	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
-    controle_asa();
-}
-void controle_asa(void){
-
-	uint32_t servoPosition = 12102  -16.13* adcVal[1];
-//	htim1.Instance->CCR2 = servoPosition;
+	throttle = (adcVal[0]*3.3)/4096;
+	brake = (adcVal[1]*3.3)/4096; // converte o valor do adc para o valor de tensão da porta do adc.
 
 }
+
+//void controle_asa(){
+//	htim1.Instance->CCR2 = (xAcc*200)/4096;
+//
+//
+//	servoPosition = (adcVal[0]*3.3)/4096;
+//
+//	if(servoPosition>=1){
+//		HAL_Delay(100);
+//	}
+//}
+
 /* USER CODE END 4 */
 
 /**
