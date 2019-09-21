@@ -55,7 +55,24 @@ uint32_t adcVal[2];
 uint8_t rawMpu[6];
 
 uint32_t xAcc, yAcc, zAcc;
+
 float throttle, brake;
+
+float right_angle=90;
+float left_angle=90;
+
+//valores de 0 a 3.3 correspondendo a tensão na pino adc
+float narrow_brake=0.05;
+float medium_brake;
+float full_brake;
+
+float narrow_throttle=0.05;
+float medium_throttle;
+float full_throttle;
+
+float delta_brake, delta_throttle;
+float past_brake, past_throttle;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,7 +84,7 @@ static void MX_I2C1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-
+void controle_asa(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -135,17 +152,21 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//	  for (dutyCyle = 230; dutyCyle <= 1230; ++dutyCyle) {
+//	  for (dutyCyle = 220; dutyCyle <= 1220; ++dutyCyle) {
 //		  htim1.Instance->CCR1 = dutyCyle;
 //		  htim1.Instance->CCR2 = dutyCyle;
 //		  HAL_Delay(10);
 //	  }
 //	  HAL_Delay(100);
-//	  for (dutyCyle = 1230; dutyCyle >= 230; --dutyCyle) {
+//	  for (dutyCyle = 1220; dutyCyle >= 220; --dutyCyle) {
 //		  htim1.Instance->CCR1 = dutyCyle;
 //		  htim1.Instance->CCR2 = dutyCyle;
 //		  HAL_Delay(10);
 //	  }
+//	  HAL_Delay(100);
+
+	  htim1.Instance->CCR1 = (right_angle * 5.55) + 220; // varia de 0 graus a 180
+	  htim1.Instance->CCR2 = (left_angle * 5.55) + 220; //
 	  HAL_Delay(100);
 
   }
@@ -453,25 +474,33 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
-//	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
+//	xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
+	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
 //	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
 	throttle = (adcVal[0]*3.3)/4096;
 	brake = (adcVal[1]*3.3)/4096; // converte o valor do adc para o valor de tensão da porta do adc.
 
+	controle_asa();
 }
 
-//void controle_asa(){
-//	htim1.Instance->CCR2 = (xAcc*200)/4096;
-//
-//
-//	servoPosition = (adcVal[0]*3.3)/4096;
-//
-//	if(servoPosition>=1){
-//		HAL_Delay(100);
-//	}
-//}
+void controle_asa()
+{
+	delta_brake = past_brake - brake;
+	delta_throttle = past_throttle - throttle;
+
+	if (brake >= narrow_brake && throttle <= narrow_throttle) {
+		right_angle = (-27.27 * brake)+90;
+		left_angle = right_angle;
+	} else {
+		right_angle = (27.27 * throttle)+90;
+		left_angle = right_angle;
+	}
+
+	past_brake = brake;
+	past_throttle = throttle;
+
+}
 
 /* USER CODE END 4 */
 
