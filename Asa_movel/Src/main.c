@@ -53,6 +53,30 @@ TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN PV */
 uint32_t adcVal[2];
 uint8_t rawMpu[6];
+
+int16_t xAcc, yAcc, zAcc;
+
+float throttle, brake;
+
+int right_angle = 90;
+int left_angle = 90;
+
+//valores de 0 a 4032 correspondendo a conversão do adc (valores obtidos atraves do debug monitor)
+float narrow_brake = 4032*0.3;
+float medium_brake = 4032*0.5;
+float full_brake = 4032*0.7;
+
+float narrow_throttle = 4032*0.3;
+float medium_throttle = 4032*0.5;
+float full_throttle = 4032*0.7;
+
+float delta_brake, delta_throttle;
+float past_brake, past_throttle;
+
+int position;
+float m_Brake, m_throttle;
+float i_Brake, i_throttle;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,11 +88,13 @@ static void MX_I2C1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-
+void controle_asa(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
 
 /* USER CODE END 0 */
 
@@ -80,7 +106,6 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint8_t mpuConfig;
-	uint16_t dutyCyle = 750;
   /* USER CODE END 1 */
   
 
@@ -113,6 +138,11 @@ int main(void)
   mpuConfig = 0b00000000;
   HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x6B, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
 
+  HAL_I2C_Mem_Read(&hi2c1, 0xD0, 0x1C, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
+  mpuConfig |= (1<<3);
+  mpuConfig |= (1<<4);
+  HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x1C, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
+
   /* inicia adc */
   HAL_TIM_Base_Start(&htim3);
   HAL_ADC_Start_IT(&hadc1);
@@ -121,6 +151,13 @@ int main(void)
   /* inicia pwm */
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+
+  /* linear conversion */
+  m_Brake = (0-90)/(full_brake - narrow_brake);
+  m_throttle = (180-90)/(full_throttle - narrow_throttle);
+
+  i_Brake = -(m_Brake*full_brake) + 0;
+  i_throttle = -(m_throttle*full_throttle) + 180;
 
   /* USER CODE END 2 */
 
@@ -132,19 +169,13 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//	  for (dutyCyle = 500; dutyCyle <= 1000; ++dutyCyle) {
-//		  htim1.Instance->CCR1 = dutyCyle;
-//		  htim1.Instance->CCR2 = dutyCyle;
-//		  HAL_Delay(15);
-//	  }
-//	  HAL_Delay(500);
-//	  for (dutyCyle = 1000; dutyCyle >= 500; --dutyCyle) {
-//		  htim1.Instance->CCR1 = dutyCyle;
-//		  htim1.Instance->CCR2 = dutyCyle;
-//		  HAL_Delay(15);
-//	  }
-//	  HAL_Delay(500);
-//  }
+
+	  htim1.Instance->CCR1 = (right_angle * 5.4) + 220; // varia de 0 graus a 180
+	  htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
+	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  HAL_Delay(100);
+
+  }
 
   /* USER CODE END 3 */
 }
@@ -441,31 +472,76 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(hadc);
-  /* NOTE : This function should not be modified. When the callback is needed,
-            function HAL_ADC_ConvCpltCallback must be implemented in the user file.
-   */
-
   HAL_I2C_Mem_Read_IT(&hi2c1, 0xD0, 0x3B, I2C_MEMADD_SIZE_8BIT, rawMpu, 6);
-  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 }
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    uint32_t xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
-    uint32_t yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
-    uint32_t zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
+//	xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
+	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
+	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
-    controle_asa();
+//	throttle = (adcVal[0]*3.3)/4096;
+//	brake = (adcVal[1]*3.3)/4096; // converte o valor do adc para o valor de tensão da porta do adc.
+	throttle = adcVal[0];
+	brake = adcVal[1];
+
+	controle_asa();
 }
-void controle_asa(void){
 
-	uint32_t servoPosition = 12102  -16.13* adcVal[1];
-//	htim1.Instance->CCR2 = servoPosition;
+void controle_asa()
+{
+	if (yAcc < 1000 && yAcc > -1000) { // fica entre a faixa de -0.5g e 0.5g de aceleração lateral
+		if (zAcc > 1000) {
+			position = 3;
+		} else {
+			position = 4;
+		}
+	} else {
+		position = 0;
+	}
+//	position = 4;
+	switch (position) {
+		case 1: // full closed
+			right_angle = 0;
+			left_angle = 0;
+			break;
+
+		case 2: // full opened
+			right_angle = 180;
+			left_angle = 180;
+			break;
+
+		case 3: // close linear
+			right_angle = m_Brake*brake + i_Brake;
+
+			if(right_angle < 0)
+				right_angle = 0;
+			if(right_angle > 90)
+				right_angle = 90;
+
+			left_angle = right_angle;
+			break;
+
+		case 4: // open linear
+			right_angle = m_throttle*throttle + i_throttle;
+
+			if(right_angle > 180)
+				right_angle = 180;
+			if(right_angle < 90)
+				right_angle = 90;
+
+			left_angle = right_angle;
+			break;
+
+		default: // middle
+			right_angle = 90;
+			left_angle = 90;
+			break;
+	}
 
 }
+
 /* USER CODE END 4 */
 
 /**
