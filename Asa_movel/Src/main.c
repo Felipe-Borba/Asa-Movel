@@ -77,6 +77,7 @@ int position;
 float m_Brake, m_throttle;
 float i_Brake, i_throttle;
 
+int dutyCyle;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -158,6 +159,44 @@ int main(void)
 
   i_Brake = -(m_Brake*full_brake) + 0;
   i_throttle = -(m_throttle*full_throttle) + 180;
+
+
+  /* dancing in the dark */
+
+    htim1.Instance->CCR1 = 665;
+    htim1.Instance->CCR2 = 665;
+    HAL_Delay(500);
+  for (dutyCyle = 655; dutyCyle <= 1200; ++dutyCyle) {
+	  htim1.Instance->CCR1 = dutyCyle;
+	  htim1.Instance->CCR2 = dutyCyle;
+	  HAL_Delay(5);
+  }
+  HAL_Delay(500);
+  htim1.Instance->CCR1 = 655;
+  htim1.Instance->CCR2 = 655;
+  HAL_Delay(500);
+  for (dutyCyle = 655; dutyCyle >= 200; --dutyCyle) {
+	  htim1.Instance->CCR1 = dutyCyle;
+	  htim1.Instance->CCR2 = dutyCyle;
+	  HAL_Delay(5);
+  }
+  HAL_Delay(500);
+
+//  htim1.Instance->CCR1 = 500;
+//  htim1.Instance->CCR2 = 500;
+//  HAL_Delay(500);
+//
+//  htim1.Instance->CCR1 = 1200;
+//  htim1.Instance->CCR2 = 1200;
+//  HAL_Delay(500);
+//
+//  htim1.Instance->CCR1 = 500;
+//  htim1.Instance->CCR2 = 500;
+//  HAL_Delay(500);
+//
+//  htim1.Instance->CCR1 = 300;
+//  htim1.Instance->CCR2 = 300;
+//  HAL_Delay(1000);
 
   /* USER CODE END 2 */
 
