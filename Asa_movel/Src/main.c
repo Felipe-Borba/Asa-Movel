@@ -34,7 +34,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define min_servo 0
-#define max_servo 180
+#define max_servo 135
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,9 +61,6 @@ float throttle, brake;
 
 int right_angle = 90;
 int left_angle = 90;
-/* ajuste dos angulos maximos e minimos do potenciometro e asa */
-//int min_servo = 0;
-//int max_servo = 180;
 int meio_servo = (max_servo-min_servo)/2;
 
 
@@ -72,9 +69,9 @@ float narrow_brake = 4032*0.3;
 float medium_brake = 4032*0.5;
 float full_brake = 4032*0.7;
 
-float narrow_throttle = 4032*0.3;
+float narrow_throttle = 1865; //4032*0.4554;
 float medium_throttle = 4032*0.5;
-float full_throttle = 4032*0.7;
+float full_throttle = 2393; //4032*0.5948;
 
 float delta_brake, delta_throttle;
 float past_brake, past_throttle;
@@ -161,26 +158,37 @@ int main(void)
 
   /* linear conversion */
   m_Brake = (min_servo-meio_servo)/(full_brake - narrow_brake);
-  m_throttle = (max_servo-meio_servo)/(full_throttle - narrow_throttle);
+  m_throttle = (min_servo-max_servo)/(full_throttle - narrow_throttle);
 
   i_Brake = -(m_Brake*full_brake) + min_servo;
-  i_throttle = -(m_throttle*full_throttle) + max_servo;
+  i_throttle = -(m_throttle*full_throttle) + min_servo;
 
 
   /* dancing in the dark */
 
-  htim1.Instance->CCR1 = meio_servo;
-  htim1.Instance->CCR2 = meio_servo;
-  HAL_Delay(700);
-  htim1.Instance->CCR1 = max_servo;
-  htim1.Instance->CCR2 = max_servo;
-  HAL_Delay(700);
-  htim1.Instance->CCR1 = min_servo;
-  htim1.Instance->CCR2 = min_servo;
-  HAL_Delay(700);
-  htim1.Instance->CCR1 = meio_servo;
-  htim1.Instance->CCR2 = meio_servo;
-  HAL_Delay(700);
+  right_angle = ((180-meio_servo) * 5.4) + 220;
+  htim1.Instance->CCR1 = right_angle;
+  left_angle = (meio_servo * 5.4) + 220;
+  htim1.Instance->CCR2 = left_angle;
+  HAL_Delay(1000);
+
+  right_angle = ((180 - max_servo) * 5.4) + 220;
+  htim1.Instance->CCR1 = right_angle;
+  left_angle = (max_servo * 5.4) + 220;
+  htim1.Instance->CCR2 = left_angle;
+  HAL_Delay(1000);
+
+  right_angle = ((180-min_servo) * 5.4) + 220;
+  htim1.Instance->CCR1 = right_angle;
+  left_angle = (min_servo * 5.4) + 220;
+  htim1.Instance->CCR2 = left_angle;
+  HAL_Delay(1000);
+
+  right_angle = ((180-meio_servo) * 5.4) + 220;
+  htim1.Instance->CCR1 = right_angle;
+  left_angle = (meio_servo * 5.4) + 220;
+  htim1.Instance->CCR2 = left_angle;
+  HAL_Delay(1000);
 
   /* USER CODE END 2 */
 
@@ -192,8 +200,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-
-	  htim1.Instance->CCR1 = (right_angle * 5.4) + 220; // varia de 0 graus a 180
+//	  htim1.Instance->CCR1 = ((180-max_servo) * 5.4) + 220;
+//	  htim1.Instance->CCR2 = (max_servo * 5.4) + 220;
+	  htim1.Instance->CCR1 = ((180-right_angle) * 5.4) + 220; // varia de 0 graus a 180
 	  htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
 	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	  HAL_Delay(100);
@@ -516,43 +525,48 @@ void controle_asa()
 {
 	if (yAcc < 1000 && yAcc > -1000) { // fica entre a faixa de -0.5g e 0.5g de aceleração lateral
 		if (xAcc > 1000) {
-			position = 3;
+			position = 2;
 		} else {
 			position = 4;
 		}
 	} else {
-		position = 0;
+		position = 2;
 	}
 //	position = 4;
 	switch (position) {
-		case 1: // full closed
+		case 1: // full opened
 			right_angle = min_servo;
 			left_angle = min_servo;
 			break;
 
-		case 2: // full opened
+		case 2: // full closed
 			right_angle = max_servo;
 			left_angle = max_servo;
 			break;
 
 		case 3: // close linear
-			right_angle = m_Brake*brake + i_Brake;
+//			right_angle = m_Brake*brake + i_Brake;
+			right_angle = m_throttle*throttle + i_throttle;
 
+			if(right_angle > max_servo)
+				right_angle = max_servo;
+//			if(right_angle < meio_servo)
+//				right_angle = meio_servo;
 			if(right_angle < min_servo)
 				right_angle = min_servo;
-			if(right_angle > meio_servo)
-				right_angle = meio_servo;
-
 			left_angle = right_angle;
 			break;
 
 		case 4: // open linear
 			right_angle = m_throttle*throttle + i_throttle;
+//			right_angle = m_Brake*brake + i_Brake;
 
 			if(right_angle > max_servo)
 				right_angle = max_servo;
-			if(right_angle < meio_servo)
-				right_angle = meio_servo;
+//			if(right_angle < meio_servo)
+//				right_angle = meio_servo;
+			if(right_angle < min_servo)
+				right_angle = min_servo;
 
 			left_angle = right_angle;
 			break;
