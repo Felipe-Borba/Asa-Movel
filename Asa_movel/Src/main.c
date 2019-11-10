@@ -190,6 +190,7 @@ int main(void)
   htim1.Instance->CCR2 = left_angle;
   HAL_Delay(1000);
 
+  NVIC_SystemReset(); // Software Reset
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -202,10 +203,10 @@ int main(void)
 
 //	  htim1.Instance->CCR1 = ((180-max_servo) * 5.4) + 220;
 //	  htim1.Instance->CCR2 = (max_servo * 5.4) + 220;
-	  htim1.Instance->CCR1 = ((180-right_angle) * 5.4) + 220; // varia de 0 graus a 180
-	  htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
-	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	  HAL_Delay(100);
+//	  htim1.Instance->CCR1 = ((180-right_angle) * 5.4) + 220; // varia de 0 graus a 180
+//	  htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
+//	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//	  HAL_Delay(100);
 
   }
 
@@ -576,7 +577,10 @@ void controle_asa()
 			left_angle = meio_servo;
 			break;
 	}
-
+	htim1.Instance->CCR1 = ((180-right_angle) * 5.4) + 220; // varia de 0 graus a 180
+	htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//	HAL_Delay(10);
 }
 
 /* USER CODE END 4 */
