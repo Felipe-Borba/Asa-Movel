@@ -150,6 +150,8 @@ int main(void)
   /* inicia adc */
   HAL_TIM_Base_Start(&htim3);
   HAL_ADC_Start_IT(&hadc1);
+  HAL_ADCEx_Calibration_Start(&hadc1);
+  HAL_Delay(1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcVal, 2);
 
   /* inicia pwm */
@@ -381,17 +383,16 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 1000;
+  sConfigOC.Pulse = 65535;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 500;
   if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
@@ -577,8 +578,10 @@ void controle_asa()
 			left_angle = meio_servo;
 			break;
 	}
-	htim1.Instance->CCR1 = ((180-right_angle) * 5.4) + 220; // varia de 0 graus a 180
-	htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
+	float esqueda = (left_angle * 5.4) + 220;
+	float direita = ((180-right_angle) * 5.4) + 220;
+	htim1.Instance->CCR2 = esqueda; //220 a 1220 CCR
+	htim1.Instance->CCR1 = direita; // varia de 0 graus a 180
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 //	HAL_Delay(10);
 }
