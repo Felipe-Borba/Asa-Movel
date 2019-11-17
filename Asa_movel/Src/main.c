@@ -35,6 +35,8 @@
 /* USER CODE BEGIN PD */
 #define min_servo 0
 #define max_servo 135
+#define alfa 0.5
+#define betha 0.5
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,28 +51,29 @@ DMA_HandleTypeDef hdma_adc1;
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
 uint32_t adcVal[2];
 uint8_t rawMpu[6];
 
-int16_t xAcc, yAcc, zAcc;
+int16_t xAcc, yAcc, zAcc, SxAcc, SyAcc;
 
-float throttle, brake;
+uint32_t throttle, brake, throttleAntigo;
 
 int right_angle = 90;
 int left_angle = 90;
 int meio_servo = (max_servo-min_servo)/2;
-
+int smooth;
 
 //valores de 0 a 4032 correspondendo a conversão do adc (valores obtidos atraves do debug monitor)
 float narrow_brake = 4032*0.3;
-float medium_brake = 4032*0.5;
+//float medium_brake = 4032*0.5;
 float full_brake = 4032*0.7;
 
 float narrow_throttle = 1865; //4032*0.4554;
-float medium_throttle = 4032*0.5;
+//float medium_throttle = 4032*0.5;
 float full_throttle = 2393; //4032*0.5948;
 
 float delta_brake, delta_throttle;
@@ -91,6 +94,7 @@ static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 void controle_asa(void);
 /* USER CODE END PFP */
@@ -136,6 +140,7 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   /* configura i2c */
@@ -151,12 +156,16 @@ int main(void)
   HAL_TIM_Base_Start(&htim3);
   HAL_ADC_Start_IT(&hadc1);
   HAL_ADCEx_Calibration_Start(&hadc1);
-  HAL_Delay(1);
+  HAL_Delay(10);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcVal, 2);
 
   /* inicia pwm */
+  HAL_TIM_PWM_Init(&htim1);
+  HAL_TIM_PWM_Init(&htim2);
+
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
   /* linear conversion */
   m_Brake = (min_servo-meio_servo)/(full_brake - narrow_brake);
@@ -167,32 +176,32 @@ int main(void)
 
 
   /* dancing in the dark */
-
+/*
   right_angle = ((180-meio_servo) * 5.4) + 220;
   htim1.Instance->CCR1 = right_angle;
   left_angle = (meio_servo * 5.4) + 220;
-  htim1.Instance->CCR2 = left_angle;
+  htim2.Instance->CCR1 = left_angle;
   HAL_Delay(1000);
 
   right_angle = ((180 - max_servo) * 5.4) + 220;
   htim1.Instance->CCR1 = right_angle;
   left_angle = (max_servo * 5.4) + 220;
-  htim1.Instance->CCR2 = left_angle;
+  htim2.Instance->CCR1 = left_angle;
   HAL_Delay(1000);
 
   right_angle = ((180-min_servo) * 5.4) + 220;
   htim1.Instance->CCR1 = right_angle;
   left_angle = (min_servo * 5.4) + 220;
-  htim1.Instance->CCR2 = left_angle;
+  htim2.Instance->CCR1 = left_angle;
   HAL_Delay(1000);
 
   right_angle = ((180-meio_servo) * 5.4) + 220;
   htim1.Instance->CCR1 = right_angle;
   left_angle = (meio_servo * 5.4) + 220;
-  htim1.Instance->CCR2 = left_angle;
+  htim2.Instance->CCR1 = left_angle;
   HAL_Delay(1000);
-
-  NVIC_SystemReset(); // Software Reset
+*/
+ // NVIC_SystemReset(); // Software Reset
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -207,8 +216,13 @@ int main(void)
 //	  htim1.Instance->CCR2 = (max_servo * 5.4) + 220;
 //	  htim1.Instance->CCR1 = ((180-right_angle) * 5.4) + 220; // varia de 0 graus a 180
 //	  htim1.Instance->CCR2 = (left_angle * 5.4) + 220; //220 a 1220 CCR
-//	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//	  HAL_Delay(100);
+
+	  float esqueda = (left_angle * 5.4) + 220;
+	  float direita = ((180-right_angle) * 5.4) + 220;
+	  htim2.Instance->CCR1 = esqueda; //220 a 1220 CCR
+	  htim1.Instance->CCR1 = direita; // varia de 0 graus a 180
+	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  HAL_Delay(100);
 
   }
 
@@ -358,6 +372,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
@@ -372,18 +387,27 @@ static void MX_TIM1_Init(void)
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 65535;
+  sConfigOC.Pulse = 1000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
@@ -403,7 +427,7 @@ static void MX_TIM1_Init(void)
   sBreakDeadTimeConfig.DeadTime = 0;
   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_ENABLE;
   if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
   {
     Error_Handler();
@@ -412,6 +436,65 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 2 */
   HAL_TIM_MspPostInit(&htim1);
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 144-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 10000-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 1000;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -513,20 +596,25 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	xAcc = (rawMpu[0] << 8) | (0x00F0 & rawMpu[1]);
 	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
-//	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
+	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
-//	throttle = (adcVal[0]*3.3)/4096;
-//	brake = (adcVal[1]*3.3)/4096; // converte o valor do adc para o valor de tensão da porta do adc.
+	SxAcc = (betha*xAcc)+((1-betha)*SxAcc);
+	SyAcc = (betha*yAcc)+((1-betha)*SyAcc);
+
+
 	throttle = adcVal[0];
 	brake = adcVal[1];
+	smooth = (alfa*throttle)+((1-alfa)*throttleAntigo);
+	throttleAntigo = smooth;
 
 	controle_asa();
 }
 
 void controle_asa()
 {
-	if (yAcc < 1000 && yAcc > -1000) { // fica entre a faixa de -0.5g e 0.5g de aceleração lateral
-		if (xAcc > 1000) {
+
+	if (SyAcc < 1000 && SyAcc > -1000) { // fica entre a faixa de -0.5g e 0.5g de aceleração lateral
+		if (SxAcc > 1000) {
 			position = 2;
 		} else {
 			position = 4;
@@ -560,7 +648,8 @@ void controle_asa()
 			break;
 
 		case 4: // open linear
-			right_angle = m_throttle*throttle + i_throttle;
+//			right_angle = m_throttle*throttle + i_throttle;
+			right_angle = m_throttle*smooth + i_throttle;
 //			right_angle = m_Brake*brake + i_Brake;
 
 			if(right_angle > max_servo)
@@ -578,12 +667,13 @@ void controle_asa()
 			left_angle = meio_servo;
 			break;
 	}
-	float esqueda = (left_angle * 5.4) + 220;
-	float direita = ((180-right_angle) * 5.4) + 220;
-	htim1.Instance->CCR2 = esqueda; //220 a 1220 CCR
-	htim1.Instance->CCR1 = direita; // varia de 0 graus a 180
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//	HAL_Delay(10);
+
+//	float esqueda = (left_angle * 5.4) + 220;
+//	float direita = ((180-right_angle) * 5.4) + 220;
+//
+//	htim2.Instance->CCR1 = esqueda; //220 a 1220 CCR
+//	htim1.Instance->CCR1 = direita; // varia de 0 graus a 180
+//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 }
 
 /* USER CODE END 4 */
@@ -597,6 +687,9 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
 
+	while(1){
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 

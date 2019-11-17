@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/felip/Desktop/GitKraken/Asa-Movel/Asa_movel/Inc
+HeaderPath=C:/Users/felip/Documents/GitKraken/Asa-Movel/Asa_movel/Inc
 HeaderFiles=stm32f1xx_it.h;stm32f1xx_hal_conf.h;main.h;
-SourcePath=C:/Users/felip/Desktop/GitKraken/Asa-Movel/Asa_movel/Src
+SourcePath=C:/Users/felip/Documents/GitKraken/Asa-Movel/Asa_movel/Src
 SourceFiles=stm32f1xx_it.c;stm32f1xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]
