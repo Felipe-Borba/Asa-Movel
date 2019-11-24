@@ -35,8 +35,9 @@
 /* USER CODE BEGIN PD */
 #define min_servo 0
 #define max_servo 135
-#define alfa 0.5
-#define betha 0.5
+#define alfa 0.1
+#define bethax 0.05
+#define bethay 0.05
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -598,8 +599,8 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
 	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
-	SxAcc = (betha*xAcc)+((1-betha)*SxAcc);
-	SyAcc = (betha*yAcc)+((1-betha)*SyAcc);
+	SxAcc = (bethax*xAcc)+((1-bethax)*SxAcc);
+	SyAcc = (bethay*yAcc)+((1-bethay)*SyAcc);
 
 
 	throttle = adcVal[0];
@@ -636,7 +637,7 @@ void controle_asa()
 
 		case 3: // close linear
 //			right_angle = m_Brake*brake + i_Brake;
-			right_angle = m_throttle*throttle + i_throttle;
+			right_angle = m_throttle*smooth + i_throttle;
 
 			if(right_angle > max_servo)
 				right_angle = max_servo;
