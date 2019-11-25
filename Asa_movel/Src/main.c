@@ -35,7 +35,7 @@
 /* USER CODE BEGIN PD */
 #define min_servo 0
 #define max_servo 135
-#define alfa 0.1
+#define alfa 0.5
 #define bethax 0.05
 #define bethay 0.05
 /* USER CODE END PD */
@@ -177,7 +177,7 @@ int main(void)
 
 
   /* dancing in the dark */
-/*
+
   right_angle = ((180-meio_servo) * 5.4) + 220;
   htim1.Instance->CCR1 = right_angle;
   left_angle = (meio_servo * 5.4) + 220;
@@ -201,7 +201,7 @@ int main(void)
   left_angle = (meio_servo * 5.4) + 220;
   htim2.Instance->CCR1 = left_angle;
   HAL_Delay(1000);
-*/
+
  // NVIC_SystemReset(); // Software Reset
   /* USER CODE END 2 */
 
