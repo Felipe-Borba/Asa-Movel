@@ -36,8 +36,10 @@
 #define min_servo 0
 #define max_servo 135
 #define alfa 0.5
-#define bethax 0.05
-#define bethay 0.05
+#define bethax1 0.01
+#define bethay1 0.01
+#define bethax2 0.1
+#define bethay2 0.1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,7 +61,7 @@ TIM_HandleTypeDef htim3;
 uint32_t adcVal[2];
 uint8_t rawMpu[6];
 
-int16_t xAcc, yAcc, zAcc, SxAcc, SyAcc;
+int16_t xAcc, yAcc, zAcc, Sx1Acc, Sy1Acc, Sx2Acc, Sy2Acc;
 
 uint32_t throttle, brake, throttleAntigo;
 
@@ -599,9 +601,11 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 	yAcc = (rawMpu[2] << 8) | (0x00F0 & rawMpu[3]);
 	zAcc = (rawMpu[4] << 8) | (0x00F0 & rawMpu[5]);
 
-	SxAcc = (bethax*xAcc)+((1-bethax)*SxAcc);
-	SyAcc = (bethay*yAcc)+((1-bethay)*SyAcc);
+	Sx1Acc = (bethax1*xAcc)+((1-bethax1)*Sx1Acc);
+	Sx2Acc = (bethax2*Sx1Acc)+((1-bethax2)*Sx2Acc);
 
+	Sy1Acc = (bethay1*yAcc)+((1-bethay1)*Sy1Acc);
+	Sy2Acc = (bethay2*Sy1Acc)+((1-bethay2)*Sy2Acc);
 
 	throttle = adcVal[0];
 	brake = adcVal[1];
@@ -614,8 +618,8 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 void controle_asa()
 {
 
-	if (SyAcc < 1000 && SyAcc > -1000) { // fica entre a faixa de -0.5g e 0.5g de aceleração lateral
-		if (SxAcc > 1000) {
+	if (Sy2Acc < 1000 && Sy2Acc > -1000) { // fica entre a faixa de -0.5g e 0.5g de aceleração lateral
+		if (Sx2Acc > 1000) {
 			position = 2;
 		} else {
 			position = 4;
