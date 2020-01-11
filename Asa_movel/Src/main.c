@@ -36,8 +36,8 @@
 #define min_servo 0
 #define max_servo 135
 #define alfa 0.5
-#define bethax1 0.01
-#define bethay1 0.01
+#define bethax1 0.05
+#define bethay1 0.05
 #define bethax2 0.1
 #define bethay2 0.1
 /* USER CODE END PD */
@@ -62,7 +62,7 @@ uint32_t adcVal[2];
 uint8_t rawMpu[6];
 
 int16_t xAcc, yAcc, zAcc, Sx1Acc, Sy1Acc, Sx2Acc, Sy2Acc;
-
+int16_t Sy1Accant, Sy2Accant;
 uint32_t throttle, brake, throttleAntigo;
 
 int right_angle = 90;
@@ -87,6 +87,8 @@ float m_Brake, m_throttle;
 float i_Brake, i_throttle;
 
 int dutyCyle;
+
+HAL_StatusTypeDef stat;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -147,13 +149,23 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* configura i2c */
-  mpuConfig = 0b00000000;
-  HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x6B, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
+  if(HAL_I2C_IsDeviceReady(&hi2c1, 0xD0, 1, 10) == HAL_OK){	//if importante porque nem sempre o modulo vai estar pronto antes do stm depois do hardware reset
+	  mpuConfig = 0b00000000;
+	  stat = HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x6B, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
 
-  HAL_I2C_Mem_Read(&hi2c1, 0xD0, 0x1C, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
-  mpuConfig |= (1<<3);
-  mpuConfig |= (1<<4);
-  HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x1C, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
+	  stat = HAL_I2C_Mem_Read(&hi2c1, 0xD0, 0x1C, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
+	  mpuConfig |= (1<<3);
+	  mpuConfig |= (1<<4);
+	  stat = HAL_I2C_Mem_Write(&hi2c1, 0xD0, 0x1C, I2C_MEMADD_SIZE_8BIT, &mpuConfig, 1, 100);
+  }else{
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+	  HAL_Delay(100);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	  HAL_Delay(100);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+	  HAL_Delay(100);
+	  NVIC_SystemReset(); // Software Reset
+  }
 
   /* inicia adc */
   HAL_TIM_Base_Start(&htim3);
@@ -204,7 +216,7 @@ int main(void)
   htim2.Instance->CCR1 = left_angle;
   HAL_Delay(1000);
 
- // NVIC_SystemReset(); // Software Reset
+  //NVIC_SystemReset(); // Software Reset
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -224,7 +236,7 @@ int main(void)
 	  float direita = ((180-right_angle) * 5.4) + 220;
 	  htim2.Instance->CCR1 = esqueda; //220 a 1220 CCR
 	  htim1.Instance->CCR1 = direita; // varia de 0 graus a 180
-	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  //HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	  HAL_Delay(100);
 
   }
@@ -604,8 +616,11 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 	Sx1Acc = (bethax1*xAcc)+((1-bethax1)*Sx1Acc);
 	Sx2Acc = (bethax2*Sx1Acc)+((1-bethax2)*Sx2Acc);
 
-	Sy1Acc = (bethay1*yAcc)+((1-bethay1)*Sy1Acc);
-	Sy2Acc = (bethay2*Sy1Acc)+((1-bethay2)*Sy2Acc);
+
+	Sy1Acc = (bethay1*yAcc)+((1-bethay1)*Sy1Accant);
+	Sy1Accant = Sy1Acc;
+	Sy2Acc = (bethay2*Sy1Acc)+((1-bethay2)*Sy2Accant);
+	 Sy2Accant = Sy1Acc;
 
 	throttle = adcVal[0];
 	brake = adcVal[1];
@@ -678,7 +693,7 @@ void controle_asa()
 //
 //	htim2.Instance->CCR1 = esqueda; //220 a 1220 CCR
 //	htim1.Instance->CCR1 = direita; // varia de 0 graus a 180
-//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 }
 
 /* USER CODE END 4 */
@@ -691,7 +706,6 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-
 	while(1){
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 	}
