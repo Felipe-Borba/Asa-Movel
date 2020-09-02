@@ -1,6 +1,31 @@
 #include <Servo.h>
+#include "I2Cdev.h"
+#include "MPU6050_6Axis_MotionApps20.h"
+#include "Wire.h"
 
+MPU6050 mpu;
+#define INTERRUPT_PIN PB11  // use pin 2 on Arduino Uno & most boards
+#define LED_PIN PC13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
+bool blinkState = false;
 
+// MPU control/status vars
+bool dmpReady = false;  // set true if DMP init was successful
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64]; // FIFO storage buffer
+
+// orientation/motion vars
+Quaternion q;           // [w, x, y, z]         quaternion container
+VectorInt16 aa;         // [x, y, z]            accel sensor measurements
+VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
+VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
+VectorFloat gravity;    // [x, y, z]            gravity vector
+float euler[3];         // [psi, theta, phi]    Euler angle container
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+
+//----//
 Servo servo1;  // cria um objeto para controlar o servo
 Servo servo2;  // cria um objeto para controlar o servo
 
@@ -18,70 +43,127 @@ int max_servo1 = 0, min_servo1 = 180;
 int max_servo2 = 0, min_servo2 = 180;
 int pos_servo1, pos_servo2;
 
-bool led_state = false;
 
 void init_servo();
+void init_mpu();
 void config_limit();
 
-void setup() {
-    Serial.begin(115200);
-    
-    pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(pot1, INPUT_ANALOG); //inicia esses pinos de entrada adc
-    pinMode(pot2, INPUT_ANALOG);
-    //pinMode(pot3, INPUT_ANALOG);
+// ================================================================
+// ===               INTERRUPT DETECTION ROUTINE                ===
+// ================================================================
 
-    pinMode(manual_auto, INPUT_PULLUP); // chave manual automático
-    pinMode(botao_asa, INPUT_PULLUP); // botão abre asa
-
-    init_servo();
-    
-    // config_limit(); // usado para ver o valor dos potenciometros
+volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
+void dmpDataReady() {
+  mpuInterrupt = true;
 }
 
+
+// ================================================================
+// ===                      INITIAL SETUP                       ===
+// ================================================================
+
+void setup() {
+  Wire.begin();
+  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+
+  Serial.begin(115200);
+  while (!Serial); // wait for Leonardo enumeration, others continue immediately
+
+  //configure potentiometers
+  pinMode(pot1, INPUT_ANALOG); //inicia esses pinos de entrada adc
+  pinMode(pot2, INPUT_ANALOG);
+
+  //configure buttons
+  pinMode(manual_auto, INPUT_PULLUP); // chave manual automático
+  pinMode(botao_asa, INPUT_PULLUP); // botão abre asa
+
+  // configure LED for output
+  pinMode(LED_PIN, OUTPUT);
+
+
+  init_mpu();
+
+  // wait for ready
+  Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+  while (Serial.available() && Serial.read()); // empty buffer
+  while (!Serial.available());                 // wait for data
+  while (Serial.available() && Serial.read()); // empty buffer again
+  //*/
+  
+  init_servo();
+
+  // config_limit(); // usado para ver o valor dos potenciometros
+}
+// ================================================================
+// ===                    MAIN PROGRAM LOOP                     ===
+// ================================================================
 void loop() {
-    /*
+  // if programming failed, don't try to do anything
+  if (!dmpReady) return;
+  // read a packet from FIFO
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet
+    // display initial world-frame acceleration, adjusted to remove gravity
+    // and rotated based on known orientation from quaternion
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetAccel(&aa, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
+    //Pode visualizar os dados pelo Plotter serial (Ctrl+Shift+L)
+    Serial.print("aworld\t");
+    Serial.print(aaWorld.x);
+    Serial.print("\t");
+    Serial.print(aaWorld.y);
+    Serial.print("\t");
+    Serial.println(aaWorld.z);
+    
+  }
+  /*
     if (digitalRead(manual_auto)) {
-        if (a.acceleration.x < -10 || a.acceleration.y > 10 || a.acceleration.y < -10) {
-            servo1.write(max_servo1);
-            servo2.write(min_servo2);
-        } else {
-            pos_pot1 = analogRead(pot1);
-            Serial.print(" pos_pot1: ");
-            Serial.println(pos_pot1);
+      if (a.acceleration.x < -10 || a.acceleration.y > 10 || a.acceleration.y < -10) {
+          servo1.write(max_servo1);
+          servo2.write(min_servo2);
+      } else {
+          pos_pot1 = analogRead(pot1);
+          Serial.print(" pos_pot1: ");
+          Serial.println(pos_pot1);
 
-            pos_servo1 = map(pos_pot1, min_pot1, max_pot1, min_servo1, max_servo2);
-            pos_servo2 = map(pos_pot1, min_pot1, max_pot1, max_servo2, min_servo2);
-            Serial.print(" pos_servo1: ");
-            Serial.println(pos_servo1);
-            Serial.println("");
+          pos_servo1 = map(pos_pot1, min_pot1, max_pot1, min_servo1, max_servo2);
+          pos_servo2 = map(pos_pot1, min_pot1, max_pot1, max_servo2, min_servo2);
+          Serial.print(" pos_servo1: ");
+          Serial.println(pos_servo1);
+          Serial.println("");
 
-            servo1.write(pos_servo1);
-            servo2.write(pos_servo2);
-        }
+          servo1.write(pos_servo1);
+          servo2.write(pos_servo2);
+      }
     } else {
-        if (digitalRead(botao_asa)){
-            servo1.write(max_servo1);
-            servo2.write(min_servo2);
-        } else {
-            servo1.write(min_servo1);
-            servo2.write(max_servo2);
-        }
+      if (digitalRead(botao_asa)){
+          servo1.write(max_servo1);
+          servo2.write(min_servo2);
+      } else {
+          servo1.write(min_servo1);
+          servo2.write(max_servo2);
+      }
     }
     //*/
-    
-    //blink led to display activity
-    led_state != led_state;
-    digitalWrite(LED_BUILTIN, led_state);
 
-    //teste
-    Serial.print("pot1:");
-    Serial.println(analogRead(pot1));
-    Serial.print("pot2:");
-    Serial.println(analogRead(pot2));
+  //blink led to display activity
+  blinkState != blinkState;
+  digitalWrite(LED_PIN, blinkState);
+
+  /*/teste
+  Serial.print("pot1:");
+  Serial.println(analogRead(pot1));
+  Serial.print("pot2:");
+  Serial.println(analogRead(pot2));
+  //*/
 }
+// ================================================================
+// ===                        Functions                         ===
+// ================================================================
 /*
-void config_limit() {
+  void config_limit() {
     int delay_value = 2000;
 
     Serial.println("leitura do potenciometro 1 ");
@@ -122,92 +204,77 @@ void config_limit() {
 
     Serial.println("Anote os valores e mude no código");
     delay(delay_value);
-}
-//*/
+  }
+  //*/
 
 void init_servo() {
-    servo1.attach(PA15); //mudar  
-    servo2.attach(PA8); //mudar
+  servo1.attach(PA15); //mudar
+  servo2.attach(PA8); //mudar
 
-    //move servos
-    servo1.write(max_servo1);
-    servo2.write(min_servo2);
-    delay(1000);
-    servo1.write(min_servo1);
-    servo2.write(max_servo2);
-    delay(1000);
+  //move servos
+  servo1.write(max_servo1);
+  servo2.write(min_servo2);
+  delay(1000);
+  servo1.write(min_servo1);
+  servo2.write(max_servo2);
+  delay(1000);
 }
-/*
+
 void init_mpu() {
-    Serial.println("Adafruit MPU6050 test!");
-    delay(1000);
-    // Try to initialize!
-    if (!mpu.begin()) {
-        Serial.println("Failed to find MPU6050 chip");
-        while (1) {
-            delay(10);
-        }
-    }
-    Serial.println("MPU6050 Found!");
 
-    mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
-    Serial.print("Accelerometer range set to: ");
-    switch (mpu.getAccelerometerRange()) {
-    case MPU6050_RANGE_2_G:
-        Serial.println("+-2G");
-        break;
-    case MPU6050_RANGE_4_G:
-        Serial.println("+-4G");
-        break;
-    case MPU6050_RANGE_8_G:
-        Serial.println("+-8G");
-        break;
-    case MPU6050_RANGE_16_G:
-        Serial.println("+-16G");
-        break;
-    }
+  // initialize device
+  Serial.println(F("Initializing I2C devices..."));
+  mpu.initialize();
+  pinMode(INTERRUPT_PIN, INPUT);
 
-    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-    Serial.print("Gyro range set to: ");
-    switch (mpu.getGyroRange()) {
-    case MPU6050_RANGE_250_DEG:
-        Serial.println("+- 250 deg/s");
-        break;
-    case MPU6050_RANGE_500_DEG:
-        Serial.println("+- 500 deg/s");
-        break;
-    case MPU6050_RANGE_1000_DEG:
-        Serial.println("+- 1000 deg/s");
-        break;
-    case MPU6050_RANGE_2000_DEG:
-        Serial.println("+- 2000 deg/s");
-        break;
-    }
+  // verify connection
+  Serial.println(F("Testing device connections..."));
+  Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
-    mpu.setFilterBandwidth(MPU6050_BAND_44_HZ);
-    Serial.print("Filter bandwidth set to: ");
-    switch (mpu.getFilterBandwidth()) {
-    case MPU6050_BAND_260_HZ:
-        Serial.println("260 Hz");
-        break;
-    case MPU6050_BAND_184_HZ:
-        Serial.println("184 Hz");
-        break;
-    case MPU6050_BAND_94_HZ:
-        Serial.println("94 Hz");
-        break;
-    case MPU6050_BAND_44_HZ:
-        Serial.println("44 Hz");
-        break;
-    case MPU6050_BAND_21_HZ:
-        Serial.println("21 Hz");
-        break;
-    case MPU6050_BAND_10_HZ:
-        Serial.println("10 Hz");
-        break;
-    case MPU6050_BAND_5_HZ:
-        Serial.println("5 Hz");
-        break;
-    }    
+  /*/ wait for ready
+  Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+  while (Serial.available() && Serial.read()); // empty buffer
+  while (!Serial.available());                 // wait for data
+  while (Serial.available() && Serial.read()); // empty buffer again
+  //*/
+
+  // load and configure the DMP
+  Serial.println(F("Initializing DMP..."));
+  devStatus = mpu.dmpInitialize();
+  
+  // make sure it worked (returns 0 if so)
+  if (devStatus == 0) {
+    // Calibration Time: generate offsets and calibrate our MPU6050
+    mpu.CalibrateAccel(6);
+    mpu.CalibrateGyro(6);
+    mpu.PrintActiveOffsets();
+    // turn on the DMP, now that it's ready
+    Serial.println(F("Enabling DMP..."));
+    mpu.setDMPEnabled(true);
+
+    // enable Arduino interrupt detection
+    Serial.print(F("Enabling interrupt detection (Arduino external interrupt "));
+    Serial.print(digitalPinToInterrupt(INTERRUPT_PIN));
+    Serial.println(F(")..."));
+    attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
+    mpuIntStatus = mpu.getIntStatus();
+
+    // set our DMP Ready flag so the main loop() function knows it's okay to use it
+    Serial.println(F("DMP ready! Waiting for first interrupt..."));
+    dmpReady = true;
+
+    // get expected DMP packet size for later comparison
+    packetSize = mpu.dmpGetFIFOPacketSize();
+  } else {
+    // ERROR!
+    // 1 = initial memory load failed
+    // 2 = DMP configuration updates failed
+    // (if it's going to break, usually the code will be 1)
+    Serial.print(F("DMP Initialization failed (code "));
+    Serial.print(devStatus);
+    Serial.println(F(")"));
+  }
+
+
 }
 //*/
