@@ -45,8 +45,9 @@ int max_servo2 = 0, min_servo2 = 180;
 int pos_servo1, pos_servo2;
 
 // Threshold limit //
-#define Cornering 2000
-#define Brake 2100
+#define RCornering 800
+#define LCornering -700
+#define Brake -1700 //-1700 para fordKa
 #define Acceleration 550 // 0 ~ 1022
 
 // Functions //
@@ -120,7 +121,9 @@ void loop() {
   }
   //*
   if (digitalRead(manual_auto)) {
-    if (aaWorld.x > Brake || aaWorld.y > Cornering || aaWorld.y < -Cornering) {
+    if (((aaWorld.x -Brake) <=1  )|| 
+        (aaWorld.y >= RCornering )|| 
+        (aaWorld.y <= LCornering )){
       servo1.write(max_servo1);
       servo2.write(min_servo2);
       while (analogRead(pot1) < Acceleration && digitalRead(manual_auto)) {
@@ -181,12 +184,12 @@ void dispay_info(){
     Serial.print(aaWorld.z);
   
     Serial.print("\t");
-    Serial.print("Cornering:+");
-    Serial.print(Cornering);
+    Serial.print("RCornering:");
+    Serial.print(RCornering);
   
     Serial.print("\t");
-    Serial.print("Cornering:-");
-    Serial.print(Cornering);
+    Serial.print("LCornering:");
+    Serial.print(LCornering);
    
     Serial.print("\t");
     Serial.print("Brake:");
