@@ -45,10 +45,10 @@ int max_servo2 = 0, min_servo2 = 180;
 int pos_servo1, pos_servo2;
 
 // Threshold limit //
-#define RCornering 800
-#define LCornering -700
-#define Brake -1700 //-1700 para fordKa
-#define Acceleration 550 // 0 ~ 1022
+#define RCornering 800    //  800 para fordKa
+#define LCornering -700   // -700 para fordKa
+#define Brake -1700       //-1700 para fordKa
+#define Acceleration 550  // 0 ~ 1022
 
 // Functions //
 void init_servo();
@@ -85,7 +85,13 @@ void setup() {
 
   init_mpu();
 
-  /*/ wait for ready
+
+
+  /*/ wait for ready                               //0 = +/- 2g
+    Serial.print("escala:");                         //1 = +/- 4g
+    Serial.println(mpu.getFullScaleAccelRange());    //2 = +/- 8g
+                                                   //3 = +/- 16g
+
     Serial.println(F("\nSend any character to begin DMP programming and demo: "));
     while (Serial.available() && Serial.read()); // empty buffer
     while (!Serial.available());                 // wait for data
@@ -104,7 +110,7 @@ void loop() {
   // if programming failed, don't try to do anything
   if (!dmpReady) return;
   // read a packet from FIFO
-  
+
   if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet
     // display initial world-frame acceleration, adjusted to remove gravity
     // and rotated based on known orientation from quaternion
@@ -116,24 +122,24 @@ void loop() {
     //pos_pot1 = analogRead(pot1);
     float alfa = 0.1;
     pos_pot1 = ( alfa * pos_pot1 ) + ( 1.0f - alfa ) * analogRead(pot1);
-    
+
     dispay_info();
   }
   //*
   if (digitalRead(manual_auto)) {
-    if (((aaWorld.x -Brake) <=1  )|| 
-        (aaWorld.y >= RCornering )|| 
-        (aaWorld.y <= LCornering )){
+    if (((aaWorld.x - Brake) <= 1  ) ||
+        (aaWorld.y >= RCornering ) ||
+        (aaWorld.y <= LCornering ) ) {
       servo1.write(max_servo1);
       servo2.write(min_servo2);
       while (analogRead(pot1) < Acceleration && digitalRead(manual_auto)) {
         //bloqueia enquanto não detectar uma aceleração pelo potenciometro no acelerador
         dispay_info();
-        
- 
+
+
       }
     } else {
-      
+
       // Serial.print(" pos_pot1: ");
       // Serial.println(pos_pot1);
 
@@ -141,7 +147,7 @@ void loop() {
       pos_servo2 = map(pos_pot1, min_pot1, max_pot1, max_servo2, min_servo2);
       // Serial.print(" pos_servo1: ");
       // Serial.println(pos_servo1);
-      // Serial.println("");  
+      // Serial.println("");
 
       servo1.write(pos_servo1);
       servo2.write(pos_servo2);
@@ -156,58 +162,73 @@ void loop() {
     }
   }
   //*/
-  
+
   //blink led to display activity
   if (blinkState)
-    blinkState=false;
+    blinkState = false;
   else
-    blinkState=true;
-    
+    blinkState = true;
+
   digitalWrite(LED_BUILTIN, blinkState);
 }
 
 // ================================================================
 // ===                        Functions                         ===
 // ================================================================
-void dispay_info(){
-    //Pode visualizar os dados pelo Plotter serial (Ctrl+Shift+L)
-    //
-    Serial.print("aaWorld.x:");
-    Serial.print(aaWorld.x);
-    
+void dispay_info() {
+  //Pode visualizar os dados pelo Plotter serial (Ctrl+Shift+L)
+  //Sensibilidade é 2G então divide por 8192?
+  //
+  Serial.print("aaWorld.x:");
+  Serial.print(aaWorld.x);
+
+  Serial.print("\t");
+  Serial.print("aaWorld.y:");
+  Serial.print(aaWorld.y);
+
+  Serial.print("\t");
+  Serial.print("aaWorld.z:");
+  Serial.print(aaWorld.z);
+
+  //
+  Serial.print("\t");
+  Serial.print("RCornering:");
+  Serial.print(RCornering);
+
+  Serial.print("\t");
+  Serial.print("LCornering:");
+  Serial.print(LCornering);
+
+  Serial.print("\t");
+  Serial.print("Brake:");
+  Serial.println(Brake);
+  /*//
+
     Serial.print("\t");
-    Serial.print("aaWorld.y:");
-    Serial.print(aaWorld.y);
-   
+    Serial.print("GetAccel.x:");
+    Serial.print(aa.x);
+
     Serial.print("\t");
-    Serial.print("aaWorld.z:");
-    Serial.print(aaWorld.z);
-  
+    Serial.print("GetAccel.y:");
+    Serial.print(aa.y);
+
     Serial.print("\t");
-    Serial.print("RCornering:");
-    Serial.print(RCornering);
-  
-    Serial.print("\t");
-    Serial.print("LCornering:");
-    Serial.print(LCornering);
-   
-    Serial.print("\t");
-    Serial.print("Brake:");
-    Serial.println(Brake);   
-    /*//
+    Serial.print("GetAccel.z:");
+    Serial.print(aa.z);
+    ///
     Serial.print("\t");
     Serial.print("Acceleration:");
-    Serial.println(Acceleration); 
-   
-    Serial.print("\t");   
+    Serial.println(Acceleration);
+
+    Serial.print("\t");
     Serial.print("pot1:");
-    Serial.println(pos_pot1);  
-    
-    Serial.print("\t");   
+    Serial.println(pos_pot1);
+
+    Serial.print("\t");
     Serial.print("pos_pot2:");
     Serial.println(analogRead(pot2));
     //*/
-    Serial.print("\n");
+  Serial.print("\n");
 }
 void init_servo() {
   servo1.attach(PA15); //mudar
@@ -275,6 +296,6 @@ void init_mpu() {
     Serial.print(F("DMP Initialization failed (code "));
     Serial.print(devStatus);
     Serial.println(F(")"));
-    
+
   }
 }
