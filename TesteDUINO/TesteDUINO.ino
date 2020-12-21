@@ -28,8 +28,8 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 Servo servo1;  // cria um objeto para controlar o servo
 Servo servo2;  // cria um objeto para controlar o servo
 
-#define manual_auto PB4 //Não posso usar o PA11 e PA12 pq eles são usaedos pelo USB
-#define botao_asa PB3
+#define manual_auto PB3 //Não posso usar o PA11 e PA12 pq eles são usaedos pelo USB
+#define botao_asa PB4
 #define pot1 PA0
 #define pot2 PA1
 //#define pot3 PB1

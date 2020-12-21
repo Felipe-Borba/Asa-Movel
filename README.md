@@ -1,2 +1,4 @@
 # Asa-Movel
-Sem brigas, é só ir programando e se amando.
+Observações:
+
+20/12/2020 Coloquei um diodo de proteção contra polaridade reversa
