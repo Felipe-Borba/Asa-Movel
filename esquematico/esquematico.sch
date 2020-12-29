@@ -28,13 +28,13 @@ Text GLabel 2000 2950 2    50   Input ~ 0
 12V
 Text GLabel 2000 2850 2    50   Input ~ 0
 GND
-Text GLabel 2950 1450 2    50   Input ~ 0
+Text GLabel 3100 1450 2    50   Input ~ 0
 GND
-Text GLabel 950  1150 0    50   Input ~ 0
+Text GLabel 800  1150 0    50   Input ~ 0
 12V
-Text GLabel 950  1450 0    50   Input ~ 0
+Text GLabel 1100 1450 0    50   Input ~ 0
 GND
-Text GLabel 2950 1150 2    50   Input ~ 0
+Text GLabel 3100 1150 2    50   Input ~ 0
 5V
 Text GLabel 3600 1700 3    50   Input ~ 0
 5V
@@ -67,12 +67,12 @@ Servo2
 $Comp
 L Custom_Library:LM2596-DC-DC-Step-Down-Module U1
 U 1 1 5FE809A2
-P 1950 1300
-F 0 "U1" H 1950 1400 50  0000 C CNN
-F 1 "LM2596-DC-DC-Step-Down-Module" H 1950 1300 50  0000 C CNN
-F 2 "" H 1950 1300 50  0001 C CNN
-F 3 "" H 1950 1300 50  0001 C CNN
-	1    1950 1300
+P 2100 1300
+F 0 "U1" H 2100 1400 50  0000 C CNN
+F 1 "LM2596-DC-DC-Step-Down-Module" H 2100 1300 50  0000 C CNN
+F 2 "" H 2100 1300 50  0001 C CNN
+F 3 "" H 2100 1300 50  0001 C CNN
+	1    2100 1300
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -99,4 +99,66 @@ F 3 "" H 5400 1200 50  0001 C CNN
 $EndComp
 Text GLabel 4950 3200 0    50   Input ~ 0
 3V3
+Text GLabel 2000 2150 2    50   Input ~ 0
+Servo1
+Text GLabel 2000 2250 2    50   Input ~ 0
+Servo2
+Text GLabel 2000 2350 2    50   Input ~ 0
+Botao_Asa
+Text GLabel 2000 2450 2    50   Input ~ 0
+POTENCIOMETRO1
+Text GLabel 2000 2550 2    50   Input ~ 0
+Manual_Automatico
+Text GLabel 2000 2650 2    50   Input ~ 0
+5V
+Text GLabel 2000 2750 2    50   Input ~ 0
+3V3
+$Comp
+L Diode:1N4007 D1
+U 1 1 5FEA8DF5
+P 950 1150
+F 0 "D1" H 950 933 50  0000 C CNN
+F 1 "1N4007" H 950 1024 50  0000 C CNN
+F 2 "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal" H 950 975 50  0001 C CNN
+F 3 "http://www.vishay.com/docs/88503/1n4001.pdf" H 950 1150 50  0001 C CNN
+	1    950  1150
+	-1   0    0    1   
+$EndComp
+NoConn ~ 4950 1300
+NoConn ~ 4950 1400
+NoConn ~ 4950 1500
+NoConn ~ 4950 1600
+NoConn ~ 4950 1800
+NoConn ~ 4950 1900
+NoConn ~ 4950 2000
+NoConn ~ 4950 2100
+NoConn ~ 4950 2500
+NoConn ~ 4950 2800
+NoConn ~ 4950 2900
+NoConn ~ 5250 3550
+NoConn ~ 5350 3550
+NoConn ~ 5450 3550
+NoConn ~ 5550 3550
+NoConn ~ 5850 3200
+NoConn ~ 5850 3100
+NoConn ~ 5850 3000
+NoConn ~ 5850 2900
+NoConn ~ 5850 2600
+NoConn ~ 5850 2500
+NoConn ~ 5850 2400
+NoConn ~ 5850 2300
+NoConn ~ 5850 2200
+NoConn ~ 5850 2100
+NoConn ~ 5850 2000
+NoConn ~ 5850 1900
+NoConn ~ 5850 1800
+NoConn ~ 5850 1700
+NoConn ~ 5850 1600
+NoConn ~ 5850 1500
+NoConn ~ 5850 1400
+NoConn ~ 5850 1300
+NoConn ~ 4300 1700
+NoConn ~ 4200 1700
+NoConn ~ 4100 1700
+NoConn ~ 4000 1700
 $EndSCHEMATC
